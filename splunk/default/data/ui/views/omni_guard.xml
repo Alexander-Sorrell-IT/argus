@@ -1,0 +1,198 @@
+<form version="1.1">
+  <label>OmniGuard — LayerZero Security Monitor</label>
+  <description>AI-powered cross-chain security monitoring for $21.95B in LayerZero protocol assets</description>
+
+  <fieldset submitButton="false" autoRun="true">
+    <input type="time" token="time_range">
+      <label>Time Range</label>
+      <default><earliest>-7d</earliest><latest>now</latest></default>
+    </input>
+    <input type="dropdown" token="chain_filter">
+      <label>Chain</label>
+      <choice value="*">All Chains</choice>
+      <choice value="ethereum">Ethereum</choice>
+      <choice value="arbitrum">Arbitrum</choice>
+      <choice value="optimism">Optimism</choice>
+      <choice value="polygon">Polygon</choice>
+      <choice value="avalanche">Avalanche</choice>
+      <default>*</default>
+    </input>
+  </fieldset>
+
+  <!-- ═══ ROW 1: KPI TILES ═══ -->
+  <row>
+    <panel>
+      <single>
+        <title>Total Value at Risk (VaR)</title>
+        <search><query>| makeresults | eval var="$21.95B"</query></search>
+        <option name="colorMode">block</option>
+        <option name="underLabel">Protocol TVL in Scope</option>
+        <option name="drilldown">none</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Investigations (7d)</title>
+        <search>
+          <query>index=omni_guard_security sourcetype=layerzero:ai_report source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123" | stats count</query>
+          <earliest>-7d</earliest><latest>now</latest>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="rangeColors">["0x65A637","0xF7BC38","0xF58F39","0xD93F3C"]</option>
+        <option name="rangeValues">[0,1,5,10]</option>
+        <option name="underLabel">Investigations Completed</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Transactions Monitored</title>
+        <search>
+          <query>index=omni_guard_security sourcetype=layerzero:transaction | stats count</query>
+          <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
+        </search>
+        <option name="underLabel">On-chain Txns Indexed</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>ETH Value Moved</title>
+        <search>
+          <query>index=omni_guard_security sourcetype=layerzero:transaction | stats sum(value_eth) as total | eval total=round(total,2)." ETH"</query>
+          <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
+        </search>
+        <option name="underLabel">Total ETH Across Contracts</option>
+      </single>
+    </panel>
+    <panel>
+      <single>
+        <title>Contracts in Scope</title>
+        <search>
+          <query>index=omni_guard_security | stats dc(contract_name) as c</query>
+          <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
+        </search>
+        <option name="underLabel">Unique Contracts Monitored</option>
+      </single>
+    </panel>
+  </row>
+
+  <!-- ═══ ROW 2: INVESTIGATION LOG (LLM via SAIA + manual entries) ═══ -->
+  <row>
+    <panel>
+      <title>🤖 Investigation Log — Splunk AI Assistant (SAIA)</title>
+      <table>
+        <search>
+          <query>index=omni_guard_security sourcetype=layerzero:ai_report
+source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123"
+| eval _display_time=strftime(_time,"%Y-%m-%d %H:%M")
+| table _display_time, verdict, confidence, vulnerability_class, contract_name, chain, summary, recommended_action, source_tx_hash
+| eval confidence=round(confidence*100,0)."%"
+| sort -_display_time
+| rename _display_time as "Time", verdict as "Verdict", confidence as "Confidence",
+         vulnerability_class as "Vuln Class", contract_name as "Contract",
+         chain as "Chain", summary as "Summary", recommended_action as "Action",
+         source_tx_hash as "Tx Hash"</query>
+          <earliest>-7d</earliest><latest>now</latest>
+        </search>
+        <option name="wrap">true</option>
+        <option name="rowNumbers">true</option>
+        <format type="color" field="Verdict">
+          <colorPalette type="map">{"CRITICAL":"#D93F3C","HIGH":"#F58F39","MEDIUM":"#F7BC38","LOW":"#65A637","FALSE_POSITIVE":"#555555"}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+
+  <!-- ═══ ROW 3: LARGE TRANSACTIONS + EVENTS ═══ -->
+  <row>
+    <panel>
+      <title>🔴 Largest Value Transactions (top 20, all-time)</title>
+      <table>
+        <search>
+          <query>index=omni_guard_security sourcetype=layerzero:transaction value_eth>10 tx_hash!="0xdemo*" tx_hash!="0x123"
+| table _time, tx_hash, from_address, contract_name, chain, value_eth, value_usd_est
+| sort -value_eth | head 20
+| eval value_usd_est="$".tostring(round(value_usd_est,0))
+| rename _time as "Time", tx_hash as "Tx Hash", from_address as "From",
+         contract_name as "Contract", chain as "Chain",
+         value_eth as "ETH", value_usd_est as "USD Est"</query>
+          <earliest>-365d</earliest><latest>now</latest>
+        </search>
+      </table>
+    </panel>
+    <panel>
+      <title>Contract Events by Type</title>
+      <chart>
+        <search>
+          <query>index=omni_guard_security sourcetype=layerzero:event
+| stats count by contract_name
+| sort -count | head 10</query>
+          <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.legend.placement">none</option>
+      </chart>
+    </panel>
+  </row>
+
+  <!-- ═══ ROW 4: TRANSACTION VOLUME + TOP SENDERS ═══ -->
+  <row>
+    <panel>
+      <title>Transaction Volume Over Time (by Chain)</title>
+      <chart>
+        <search>
+          <query>index=omni_guard_security sourcetype=layerzero:transaction
+| bin _time span=6h
+| stats count by _time, chain</query>
+          <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Top Senders (Transaction Count)</title>
+      <chart>
+        <search>
+          <query>index=omni_guard_security sourcetype=layerzero:transaction
+| stats count by from_address
+| sort -count | head 8</query>
+          <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+      </chart>
+    </panel>
+  </row>
+
+  <!-- ═══ ROW 5: OWNERSHIP CHANGES + PoC TRIGGERS ═══ -->
+  <row>
+    <panel>
+      <title>⚠️ Ownership / Config Change Events</title>
+      <table>
+        <search>
+          <query>index=omni_guard_security sourcetype=layerzero:event
+(topic0="0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0"
+ OR topic0="0x7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f")
+| table _time, contract_name, chain, topic0, topic1, topic2, tx_hash
+| sort -_time | head 20</query>
+          <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
+        </search>
+      </table>
+    </panel>
+    <panel>
+      <title>⚡ PoC Fork Test Queue</title>
+      <table>
+        <search>
+          <query>index=omni_guard_security sourcetype=layerzero:poc_trigger
+| table _time, vulnerability_class, chain, block_number, tx_hash, status
+| sort -_time</query>
+          <earliest>-30d</earliest><latest>now</latest>
+        </search>
+        <format type="color" field="status">
+          <colorPalette type="map">{"PENDING":"#F7BC38","CONFIRMED":"#D93F3C","FALSE_POSITIVE":"#65A637"}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+
+</form>

@@ -1,0 +1,38 @@
+## Argus — public-repo .gitignore
+## Level 2 safety strip: keep proprietary/tuned/offensive artifacts out of any
+## published version. The PRIVATE branch can override these by committing
+## explicitly with `git add -f`.
+
+# ── secrets / env ────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.lic
+*.pem
+*.key
+
+# ── findings / outputs (private to operator) ─────────────────────────
+poc/findings/*
+!poc/findings/.gitkeep
+logs/
+
+# ── private tuned artifacts (kept in private fork, not in public) ────
+# To publish privately tuned versions, branch off `private/main` instead
+agent/submission_template.py
+agent/foundry_gen.py
+splunk/lookups/bad_addresses.csv
+
+# ── massive vendored corpora (not needed by users; documented in README) ──
+layerzero-src/
+agent/audit_text/
+models/
+
+# ── bug-hunter scratch ──────────────────────────────────────────────
+bug-hunter/
+
+# ── runtime junk ────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.DS_Store
+*.swp
+splunk-mcp/.git/

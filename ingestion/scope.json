@@ -1,0 +1,234 @@
+{
+  "_doc": "Generated from lz_var_report.TARGETS via matrix/scripts/regenerate_scope.py. Re-run when scope changes.",
+  "program": "Immunefi LayerZero",
+  "contracts": [
+    {
+      "name": "UltraLightNodeV2 (scope-doc Funds)",
+      "address": "0x4d73adb72bc3dd368966edd0f0b2148401a178e2",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "ether.fi weETH OFT",
+      "address": "0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "Ethena USDe",
+      "address": "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "USDT0 OFT Adapter (USDT collateral held)",
+      "address": "0x6c96de32cea08842dcc4058c14d3aaad7fa41dee",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "ZRO token",
+      "address": "0x6985884c4392d348587b19cb9eaaf157f13271cd",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "Ethena sUSDe",
+      "address": "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "Kelp rsETH OFT",
+      "address": "0xa1290d69c65a6fe4df752f95823fae25cb99e5a7",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "Lombard LBTC",
+      "address": "0x8236a87084f8b84306f72007f36f2618a5634494",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "Renzo ezETH OFT",
+      "address": "0xbf5495efe5db9ce00f80364c8b423567e58d2110",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "BTC.b on Avalanche (V1 OFT)",
+      "address": "0x152b9d0fdc40c096757f570a51e494bd4b943e50",
+      "chain_hint": "avalanche"
+    },
+    {
+      "name": "Puffer pufETH",
+      "address": "0xd9a442856c234a39a81a089c06451ebaa4306a72",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "Swell rswETH",
+      "address": "0xfae103dc9cf190ed75350761e95403b7b8afa6c0",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "BTC.b OFT wrapper (Polygon)",
+      "address": "0x2297aebd383787a160dd0d9f71508148769342e3",
+      "chain_hint": "polygon"
+    },
+    {
+      "name": "BTC.b OFT wrapper (Arbitrum)",
+      "address": "0x2297aebd383787a160dd0d9f71508148769342e3",
+      "chain_hint": "arbitrum"
+    },
+    {
+      "name": "Stargate V1 S*USDT (Ethereum)",
+      "address": "0x38ea452219524bb87e18de1c24d3bb59510bd783",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "Stargate V1 S*USDC (Ethereum)",
+      "address": "0xdf0770df86a8034b3efef0a1bb3c889b8332ff56",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "Stargate V1 S*ETH (Ethereum)",
+      "address": "0x101816545f6bd2b1076434b54383a1e633390a2e",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "Stargate V1 S*USDC (Avalanche)",
+      "address": "0x1205f31718499dbf1fca446663b532ef87481fe1",
+      "chain_hint": "avalanche"
+    },
+    {
+      "name": "Stargate V1 S*USDT (Avalanche)",
+      "address": "0x29e38769f23701a2e4a8ef0492e19da4604be62c",
+      "chain_hint": "avalanche"
+    },
+    {
+      "name": "Stargate V1 S*USDC (Arbitrum)",
+      "address": "0x892785f33cdee22a30aef750f285e18c18040c3e",
+      "chain_hint": "arbitrum"
+    },
+    {
+      "name": "Stargate V1 S*USDT (Arbitrum)",
+      "address": "0xb6cfcf89a7b22988bfc96632ac2a9d6dab60d641",
+      "chain_hint": "arbitrum"
+    },
+    {
+      "name": "Stargate V1 S*USDC (Optimism)",
+      "address": "0xdecc0c09c3b5f6e92ef4184125d5648a66e35298",
+      "chain_hint": "optimism"
+    },
+    {
+      "name": "Stargate V1 S*USDC (Polygon)",
+      "address": "0x1205f31718499dbf1fca446663b532ef87481fe1",
+      "chain_hint": "polygon"
+    },
+    {
+      "name": "Stargate V1 S*USDT (Polygon)",
+      "address": "0x29e38769f23701a2e4a8ef0492e19da4604be62c",
+      "chain_hint": "polygon"
+    },
+    {
+      "name": "Aptos LZ Bridge USDC",
+      "address": "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::usdc",
+      "chain_hint": "aptos"
+    },
+    {
+      "name": "Aptos LZ Bridge USDT",
+      "address": "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::usdt",
+      "chain_hint": "aptos"
+    },
+    {
+      "name": "Aptos LZ Bridge USDD",
+      "address": "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::usdd",
+      "chain_hint": "aptos"
+    },
+    {
+      "name": "Aptos LZ Bridge WETH",
+      "address": "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::weth",
+      "chain_hint": "aptos"
+    },
+    {
+      "name": "Aptos LZ Bridge WBTC",
+      "address": "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::wbtc",
+      "chain_hint": "aptos"
+    },
+    {
+      "name": "Aptos Endpoint #9 (router)",
+      "address": "0x54ad3d30af77b60d939ae356e6606de9a4da67583f02b962d2d3f2e481484e90",
+      "chain_hint": "aptos"
+    },
+    {
+      "name": "Solana EndpointV2 #17 (router)",
+      "address": "76y77prsicmvxmjuoz5vrrhg5qybrumyte5wghqgjen6",
+      "chain_hint": "solana"
+    },
+    {
+      "name": "Solana SendULN302 #15 (router)",
+      "address": "6doghb248px58jsswg4qejq46kfmw4amj7vzjnwzhnzn",
+      "chain_hint": "solana"
+    },
+    {
+      "name": "Solana ReceiveULN302 #16 (router)",
+      "address": "7a4wjyr8vz7yzz5xjakm39bugn5it9ckcv2pmg9tdxvh",
+      "chain_hint": "solana"
+    },
+    {
+      "name": "Solana DVN #18 (validator)",
+      "address": "4vdjp6xqaxozf5rgwipu9nr1exszn2tp4atmmiszlfhb",
+      "chain_hint": "solana"
+    },
+    {
+      "name": "TON Controller #22",
+      "address": "0:1eb2bbea3d8c0d42ff7fd60f0264c866c934bbff727526ca759e7374cae0c166",
+      "chain_hint": "ton"
+    },
+    {
+      "name": "TON ULNManager #23",
+      "address": "0:150645746e25be5486eb3b2f5d98b44c6b324697c48d495d059f96fc9d3ec368",
+      "chain_hint": "ton"
+    },
+    {
+      "name": "TON DVNProxy #24",
+      "address": "0:0d122dec4ec8bd66c68344faf0dd471d727a7d57a21b62051705bbe2e4c272a7",
+      "chain_hint": "ton"
+    },
+    {
+      "name": "EVM SendULN302 #2 (router, no per-contract Funds)",
+      "address": "0xbb2ea70c9e858123480642cf96acbcce1372dce1",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "EVM ReceiveULN302 #3 (router)",
+      "address": "0xc02ab410f0734efa3f14628780e6e695156024c2",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "EVM DVN #4 (validator)",
+      "address": "0x589dedbd617e0cbcb916a9223f4d1300c294236b",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "EVM SendULN301 #5 (router)",
+      "address": "0xd231084bfb234c107d3ee2b22f97f3346fdaf705",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "EVM EndpointV2 #6 (router)",
+      "address": "0x1a44076050125825900e736c501f859c50fe728c",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "EVM Endpoint V1 #7 (router)",
+      "address": "0x66a71dcef29a0ffbdbe3c6a460a3b5bc225cd675",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "EVM FPValidator #8 (validator)",
+      "address": "0x07245eea05826f5984c7c3c8f478b04892e4df89",
+      "chain_hint": "ethereum"
+    },
+    {
+      "name": "EVM ReceiveULN301 #14 (router)",
+      "address": "0x245b6e8ffe9ea5fc301e32d16f66bd4c2123eefc",
+      "chain_hint": "ethereum"
+    }
+  ],
+  "commit_shas_per_contract": {
+    "_doc": "TODO: per-contract commit SHA pinning"
+  }
+}

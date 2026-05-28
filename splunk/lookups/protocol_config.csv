@@ -1,0 +1,13 @@
+key,value
+protocol_name,LayerZero
+protocol_full_name,LayerZero Protocol
+protocol_tagline,cross-chain protocol
+total_var_display,$21.95B
+total_var_usd,21950000000
+contracts_in_scope,24
+audit_count,112
+audit_chunk_count,1290
+source_files_count,197
+immunefi_program_url,https://immunefi.com/bug-bounty/layerzero/
+max_bounty_critical,15000000
+max_bounty_high,250000
