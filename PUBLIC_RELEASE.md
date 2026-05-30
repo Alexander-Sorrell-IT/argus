@@ -1,79 +1,126 @@
 # Public release checklist — Argus
 
-Before publishing the public repo for the hackathon submission, run through
-this checklist to ensure no proprietary tuning, offensive automation, or
-private data leaks into the public version.
+Argus is an open-source, Splunk-native security operations platform for
+cross-chain DeFi (demo target: LayerZero). This checklist covers publishing
+the public repo for the hackathon submission.
+
+Guiding principle: **this is an open-source hackathon entry, so we SHIP the
+real system.** Judges need to read the detections, the agent, and the fork
+validator and see that they do what we claim. We only withhold three classes of
+thing: (1) secrets, (2) real/operator-private findings data, and (3) the
+deprecated/never-activated roadmap code. We do **not** hide working detections.
+
+## What we ship (the real system)
+
+- **Every saved search** in `splunk/default/savedsearches.conf` — all of them,
+  renamed from the legacy `OmniGuard - …` prefix to `Argus - …`. That means the
+  ~14 detections *and* the two utility searches (`Build Contract Baselines`,
+  `Candidate Scoring`) that earlier drafts wanted to withhold. Nothing in this
+  file stays behind. They are the core of the project — eventstats z-score,
+  streamstats, predict, cluster, MLTK DBSCAN, plus the `contract_baselines`
+  kvstore lookups. Hiding any of them would be self-sabotage for an open-source
+  judging round.
+- The **live agent**: `splunk/bin/argus_agent.py` (Splunk modular input,
+  deterministic Splunk-native tier-0 triage; `reasoning_engine=splunk_native_tier0`).
+- The **fork validator**: `poc/validate_finding.py` (Anvil fork at block N-1 +
+  Foundry test, writes honest `CONFIRMED`/`REJECTED` to `layerzero:fork_result`).
+- Splunk app config: `props.conf`, `transforms.conf`, `collections.conf`,
+  `indexes.conf`, `inputs.conf`, `savedsearches.conf`.
+- `architecture.png` and `ARCHITECTURE.md` (required deliverables).
+- README, PROJECT_OVERVIEW, DEMO_SCRIPT, `.env.example`, `requirements.txt`.
 
 ## Files that MUST NOT ship to public
 
-| File / dir | Why it's private | Status |
-|---|---|---|
-| `.env` (and any `.env.*` except `.env.example`) | Secrets | gitignored |
-| `poc/findings/` contents | Real candidate findings (and any real bugs) | gitignored |
-| `agent/submission_template.py` | Auto-generates Immunefi submissions — offensive automation | gitignored |
-| `agent/foundry_gen.py` | Auto-generates exploit tests from Claude/SAIA — offensive automation | gitignored |
-| `splunk/lookups/bad_addresses.csv` | Full curated list. Ship a stub with 3 famous public entries instead. | gitignored; ship `bad_addresses.example.csv` |
-| `logs/` | Runtime data + findings feed | gitignored |
-| `layerzero-src/` | 290 MB vendored source + 228 MB audits. Document where to get it; don't ship. | gitignored |
-| `agent/audit_text/` | Extracted audit text. Document the regen process; don't ship. | gitignored |
-| `bug-hunter/` | Personal scratch work | gitignored |
+These are excluded by `.gitignore` (verify with `git check-ignore <path>`):
 
-## Saved searches: ship subset only
+| File / dir | Why it's out |
+|---|---|
+| `.env` (and any `.env.*` except `.env.example`) | Secrets / API keys |
+| `*.lic`, `*.pem`, `*.key` | Credentials |
+| `poc/findings/` contents (except `.gitkeep`) | Real candidate findings + operator data |
+| `poc/findings/*/{out,cache,lib}/` | Foundry build artifacts (bloat) |
+| `logs/` | Runtime data + findings feed |
+| `layerzero-src/`, `agent/audit_text/`, `models/` | Large vendored corpora — documented in README, regenerated locally |
+| `agent/submission_template.py`, `agent/foundry_gen.py` | Offensive automation — kept on the private branch |
+| `splunk/lookups/bad_addresses.csv` | Full curated list — ship a small public stub instead |
+| `agent/mcp_agent.py`, `agent/splunk_mcp_client.py` | **DEPRECATED** MCP/SAIA path — roadmap only, not the live loop (live agent is `splunk/bin/argus_agent.py`) |
+| `splunk-mcp/`, `bug-hunter/` | Deprecated custom MCP server / personal scratch |
+| `demo/work/`, `demo/shots/`, `demo/voice/` | Render scratch dirs |
+| `demo/argus_demo.mp4`, `demo/argus_trailer.mp4`, `demo/mermaid.min.js` | Large render artifacts (host the video externally; link in README) |
 
-`splunk/default/savedsearches.conf` contains 13 searches. Public ship list:
+## Pre-publish steps
 
-**Ship (4):**
-- `OmniGuard - Value Transfer Outlier` (the vanilla version, not the kvstore one)
-- `OmniGuard - Failed Transaction Burst vs Baseline`
-- `OmniGuard - Cross-Contract Sender Correlation`
-- `OmniGuard - VaR Exposure Summary`
+1. **Rename detections** `OmniGuard - …` → `Argus - …` in
+   `splunk/default/savedsearches.conf` (the app labels are already `Argus`).
+2. **Ship a stub** `splunk/lookups/bad_addresses.csv` with ~3 famous public
+   entries (e.g. known mixer / sanctioned addresses) so detections that depend
+   on it run out of the box; keep the full curated list on the private branch.
+3. **Empty the kvstore** `contract_baselines` collection before bundling the app
+   for distribution (it holds operator-accumulated baselines). The collection
+   schema in `collections.conf` ships; the data does not.
+4. **Defensive framing** in README/dashboards: position as a SOC for cross-chain
+   protocols. Remove bug-bounty / submission-generation language. Demo wording:
+   "alert the operations team."
+5. **Confirm sovereignty claim**: no external AI in the live path. The local-MLX
+   Foundation-Sec LLM and SAIA cloud path are roadmap, not the running loop.
 
-**Hide (9):**
-- `OmniGuard - Sender Behavior Outlier` (tuned thresholds)
-- `OmniGuard - Replay or Duplicate Message ID` (tuned dedup window)
-- `OmniGuard - Rare Transaction Pattern Cluster` (tuned similarity)
-- `OmniGuard - Multi-Step Attack Sequence` (tuned maxspan/maxpause)
-- `OmniGuard - Tx Volume Forecast Deviation` (predict tuning)
-- `OmniGuard - Known-Bad Address Touched` (depends on private CSV)
-- `OmniGuard - Value Outlier Fast` (depends on kvstore baselines)
-- `OmniGuard - Build Contract Baselines` (proprietary baseline approach)
-- `OmniGuard - Candidate Scoring` (proprietary scoring weights)
-- `OmniGuard - Source Risk Pattern Scan` (proprietary risk-pattern set)
-- `OmniGuard - Sender Behavior Clustering` (proprietary feature set + DBSCAN params)
+## Verify exclusions before pushing
 
-Process: maintain `splunk/default/savedsearches.public.conf` with the 4
-ship-list searches; rename to `savedsearches.conf` when publishing.
+```bash
+# After 'git add -A', list everything staged for the public repo and confirm
+# none of the private paths are present (.env.example is intentionally kept):
+git ls-files --cached | grep -E '^(\.env$|\.env\.[^/]+$|logs/|poc/findings/|layerzero-src/|models/|agent/(mcp_agent|splunk_mcp_client|foundry_gen|submission_template)\.py|demo/(work|shots|voice)/|demo/.*\.mp4|demo/mermaid\.min\.js)' \
+  | grep -v '^\.env\.example$'
+# ^ this must print NOTHING. If it prints a path, it is about to ship — stop.
 
-## Foundry templates: ship 1, hide 4
-
-Ship `ValueExtraction.t.sol` only as a demo of the validator pattern.
-Hide `Replay.t.sol`, `DvnBypass.t.sol`, `AdminKeyGrant.t.sol`, `Reentrancy.t.sol`.
-
-## kvstore: empty before publish
-
-`/Applications/Splunk/etc/apps/omni_guard/collections.conf` defines the
-`contract_baselines` collection. The data inside is yours from months of
-running — clear it before bundling the app for distribution.
-
-## README + dashboards: defensive framing only
-
-- Position as "SOC for cross-chain protocols"
-- Remove any mention of Immunefi, bug bounty, $15M, submission generation
-- Demo language: "alert the operations team"; not "submit privately"
+# architecture.png MUST NOT be ignored (required deliverable). Empty output = good:
+git check-ignore architecture.png && echo "PROBLEM: architecture.png is ignored" || echo "OK: architecture.png will ship"
+```
 
 ## License
 
-Public ships under **AGPL-3.0**. Add `LICENSE` file with the AGPL-3.0 text.
-README header notes: *"Commercial license available — contact author"*.
+Public ships under **AGPL-3.0** (`LICENSE`,
+`Copyright (C) 2026 Alexander Sorrell — Argus`). A commercial license is
+available — note this in the README header.
 
-## Process to actually publish
+## Publish with `gh` (GitHub CLI)
 
-1. Make a clean branch: `git checkout -b public-release`
-2. Verify `.gitignore` excludes everything in the table above
-3. Rename `savedsearches.conf` → `savedsearches.private.conf` (keep locally)
-4. Rename `savedsearches.public.conf` → `savedsearches.conf` (ship this one)
-5. Generate `splunk/lookups/bad_addresses.csv` from 3 famous public entries
-6. Clear `kvstore` collections
-7. Update `LICENSE` to AGPL-3.0
-8. Commit; push to a fresh public GitHub repo
-9. Submit URL to Devpost
+The old manual "create a repo in the browser, add a remote, push" dance is
+gone. Use `gh`:
+
+```bash
+cd /Users/broodierchip-m1air/Desktop/omni-guard
+
+# 0. Untrack the deprecated MCP/SAIA files. They are gitignored, but git keeps
+#    tracking files that were committed before the ignore rule existed. This
+#    removes them from the index (files stay on disk) so they do not ship.
+#    The leak-grep in "Verify exclusions" above flags them while still tracked;
+#    that is your reminder to run this step.
+git rm --cached agent/mcp_agent.py agent/splunk_mcp_client.py
+
+# 1. Stage everything and sanity-check (re-run the leak-grep from "Verify").
+git add -A
+git status
+
+# 2. Commit the public-ready state.
+git commit -m "Argus: public hackathon release"
+
+# 3. Create the public repo on GitHub and push in one shot.
+#    --source=. uses this repo; --push pushes the current branch.
+gh repo create argus --public \
+  --source=. \
+  --remote=origin \
+  --description="Splunk-native security operations for cross-chain DeFi (LayerZero demo)" \
+  --push
+
+# 4. Confirm what actually landed on the remote (final guard against leaks).
+gh repo view --web
+```
+
+If the repo already exists, skip `gh repo create` and just
+`git push -u origin <branch>`.
+
+## Submit
+
+Copy the repo URL from `gh repo view --json url --jq .url` (and the externally
+hosted demo video link) into the Devpost submission.

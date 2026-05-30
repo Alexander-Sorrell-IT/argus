@@ -1,0 +1,19 @@
+Argus — Demo Narration Transcript
+
+[Scene 1 · Hook]
+Smart contracts run for years, and there is no tail -f for a live protocol. When something breaks, you usually hear about it on Telegram, an hour after the funds are gone. Argus turns Splunk into a security operations center for cross-chain DeFi.
+
+[Scene 2 · What it is]
+This is Argus monitoring LayerZero, live in Splunk. Every on-chain transaction, event, source file, and audit report becomes a typed Splunk sourcetype. Millions of transactions indexed across fifteen in-scope contracts on five chains.
+
+[Scene 3 · Detection and honesty]
+Detection is pure SPL. Per-contract z-score outliers on transfer value and decoded token amount, with no hardcoded thresholds. The contract teaches Splunk what is normal. And Argus is honest: it separates real anomalies from ordinary protocol lifecycle. We found and disabled a rule that was flagging normal LayerZero message delivery as replay attacks. A clean baseline beats crying wolf.
+
+[Scene 4 · In-app agent]
+An AI agent runs inside the Splunk app itself, as a modular input on the Python SDK. It triages each finding in-process and writes its verdict back as a Splunk event, deduplicated in the KV store. Here it surfaced nine value-manipulation candidates on Puffer pufETH and Ethena USDe, each with a recommended action.
+
+[Scene 5 · Fork validation]
+High-severity candidates become proof-of-concept triggers. An external Anvil mainnet fork runs a Foundry exploit test, and Argus marks a finding confirmed only when the test's own assertions reproduce the exploit. Never on a guess, and never with a fabricated number.
+
+[Scene 6 · Close]
+Everything runs on Splunk. Splunk does the pattern work, holds the state, and runs the agent, with zero external AI. Argus is what using Splunk correctly looks like. Open source, protocol-agnostic, built for the Splunk Agentic Ops Hackathon.

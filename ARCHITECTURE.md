@@ -3,154 +3,187 @@
 Splunk-native security operations platform for cross-chain DeFi protocols.
 Every analysis layer leans on Splunk primitives; external code only fills
 gaps Splunk doesn't natively cover (chain RPC ingestion, Anvil fork
-validation).
+validation). **Sovereign by design: zero external AI — everything runs on
+Splunk plus local tools.**
 
-## High-level
+![architecture](architecture.png)
+
+> The PNG above is rendered from the mermaid source below
+> (`demo/render_diagram.js`). It depicts the **as-built** system. Dashed,
+> greyed nodes are **roadmap — not wired into the live loop**.
+
+## As-built data flow
 
 ```mermaid
-graph TD
-    subgraph SOURCES["📥 Data sources"]
-        A1[On-chain RPC<br/>Etherscan + Alchemy]
-        A2[Solidity source code<br/>LayerZero repo]
-        A3[Audit reports<br/>112 PDFs from 17 auditors]
-        A4[Immunefi scope rules]
+flowchart TB
+  subgraph CHAIN["On-chain data"]
+    direction LR
+    SRC["Ethereum mainnet<br/>tx · events"]
+    ESCAN["Etherscan API"]
+    RPC["JSON-RPC node"]
+    SRC --> ESCAN
+    SRC --> RPC
+  end
+
+  subgraph INGEST["Ingestion  (Python → Splunk HEC)"]
+    direction LR
+    ING1["historical_scan.py"]
+    ING2["ingest_transactions.py"]
+    SCOPE["scope.json<br/>(Immunefi scope)"]
+  end
+
+  subgraph SPLUNK["Splunk Enterprise  —  the brain"]
+    direction TB
+    ST["Typed sourcetypes (index: omni_guard_security)<br/>layerzero:transaction · :event · :source<br/>:audit_finding · :scope"]
+    DET["SPL detections  (~14 saved searches)<br/>eventstats z-score · streamstats · predict<br/>cluster · transaction · MLTK DBSCAN"]
+    KVB[("kvstore<br/>contract_baselines")]
+    ALERT["layerzero:alert<br/>(written via | collect)"]
+
+    subgraph AGENTBOX["In-app AI Agent  —  argus_agent.py  (modular input, every 5 min)"]
+      direction TB
+      AG["Deterministic Splunk-native tier-0 triage<br/>reasoning_engine = splunk_native_tier0<br/>verdict = SPL severity · confidence = f(severity)<br/>poc_worthwhile if HIGH / CRITICAL"]
+      KVS[("kvstore<br/>argus_agent_state<br/>(KV dedup)")]
     end
 
-    subgraph INGEST["🔁 Ingestion (Python, one-time + streaming)"]
-        B1[ingest_transactions.py<br/>+ historical_scan.py]
-        B2[ingest_source.py]
-        B3[extract_audits.py<br/>+ ingest_audit_findings.py]
-        B4[ingest_immunefi.py]
-    end
+    REPORT["layerzero:ai_report"]
+    TRIG["layerzero:poc_trigger"]
 
-    subgraph SPLUNK["📊 Splunk Enterprise — the brain"]
-        C1[("Index: omni_guard_security<br/>:transaction · :event<br/>:source · :audit_finding<br/>:scope · :alert · :ai_report<br/>:fork_result · :confirmed_finding")]
-        C2[Saved searches<br/>10 SPL detections<br/>anomalydetection · cluster<br/>outlier · streamstats · predict]
-        C3[kvstore<br/>contract_baselines]
-        C4[Lookups<br/>bad_addresses.csv]
-        C5[Splunk AI Assistant<br/>cloud-connected to Splunk's<br/>managed AI cloud]
-        C6[Splunk MCP Server<br/>14 tools exposed:<br/>splunk_*, saia_*]
-    end
+    ST --> DET
+    DET <--> KVB
+    DET --> ALERT
+    ALERT --> AG
+    AG <--> KVS
+    AG --> REPORT
+    AG --> TRIG
+  end
 
-    subgraph AGENT["🤖 Argus Agent (orchestrator)"]
-        D1[mcp_agent.py<br/>polls + investigates]
-        D2[splunk_mcp_client.py<br/>JSON-RPC to MCP]
-        D3[audit_xref.py<br/>SPL query against<br/>:audit_finding]
-        D4[validate_finding.py<br/>Anvil + Foundry]
-    end
+  subgraph FORK["External fork validation  (real, off-Splunk)"]
+    direction TB
+    VAL["poc/validate_finding.py"]
+    ANVIL["Anvil — fork Ethereum mainnet @ block N-1"]
+    FORGE["Foundry — forge exploit test (.t.sol)"]
+    FRES["layerzero:fork_result<br/>HONEST verdict:<br/>CONFIRMED only if test assertions pass<br/>else REJECTED · gain is null, never faked"]
+    VAL --> ANVIL --> FORGE --> FRES
+  end
 
-    subgraph OUT["📋 Outputs"]
-        E1[OmniGuard Dashboard<br/>Splunk Web]
-        E2[macOS notify +<br/>findings_feed.log]
-        E3[poc/findings/&lt;id&gt;/<br/>Exploit.t.sol + submission.md]
-        E4[Manual review → submit<br/>privately to Immunefi]
-    end
+  SUBMIT["Drafted Immunefi submission<br/>(human-reviewed before filing)"]
 
-    A1 --> B1 --> C1
-    A2 --> B2 --> C1
-    A3 --> B3 --> C1
-    A4 --> B4 --> C1
+  subgraph ROADMAP["Roadmap  —  NOT in the live loop"]
+    direction TB
+    LLM["agent/splunk_ai.py<br/>local MLX Foundation-Sec LLM<br/>(deeper tier-1 reasoning)"]
+    MCP["agent/mcp_agent.py<br/>MCP-over-SSE orchestrator<br/>DEPRECATED / unused"]
+    SAIA["SAIA cloud LLM tenant<br/>never activated"]
+  end
 
-    C1 --> C2
-    C2 -.fires alerts.-> C1
-    C2 -.scheduled rebuild.-> C3
-    C2 --> C4
+  ESCAN --> ING1
+  RPC --> ING2
+  ING1 --> ST
+  ING2 --> ST
+  SCOPE --> ST
+  FRES --> REPORT
 
-    C6 --> D2
-    D2 --> D1
-    D1 --> D3
-    D3 -.SPL query.-> C1
-    D1 --> D4
-    D1 -.tier-1 triage.-> C5
-    C5 --> D1
-    D4 -.fork result.-> C1
+  TRIG -->|"poc_worthwhile findings"| VAL
+  FRES --> SUBMIT
 
-    C1 --> E1
-    C1 -.alert action.-> E2
-    D4 --> E3
-    E3 --> E4
+  AG -.->|"roadmap: deeper triage"| LLM
+  AG -.->|"deprecated path"| MCP
+  LLM -.->|"future cloud tier"| SAIA
 
-    style SPLUNK fill:#0f3460,color:#fff
-    style AGENT fill:#533483,color:#fff
-    style OUT fill:#16213e,color:#fff
+  classDef detect fill:#1a4a7a,stroke:#5b9dff,color:#eaf0ff;
+  classDef alertnode fill:#7a4a16,stroke:#f6a623,color:#fff4e0;
+  classDef agentnode fill:#533483,stroke:#9b8cff,color:#f3eeff;
+  classDef outnode fill:#1f6b4a,stroke:#34c98a,color:#eafff5;
+  classDef forknode fill:#5a2a3a,stroke:#e0608a,color:#ffeaf2;
+  classDef kv fill:#102a44,stroke:#5b9dff,color:#cfe0ff;
+  classDef submit fill:#1d7a3a,stroke:#43d66e,color:#eafff0;
+  classDef roadmap fill:#2a2f3a,stroke:#6b7488,color:#aab4c8,stroke-dasharray:6 4;
+
+  class ST,DET detect;
+  class KVB,KVS kv;
+  class ALERT alertnode;
+  class AG agentnode;
+  class REPORT,TRIG outnode;
+  class VAL,ANVIL,FORGE,FRES forknode;
+  class SUBMIT submit;
+  class LLM,MCP,SAIA roadmap;
 ```
 
-## The investigation loop (one alert)
+## The live loop (one alert, as-built)
+
+The in-app agent is a **Splunk modular input** (`splunk/bin/argus_agent.py`,
+Splunk Python SDK) that runs inside `splunkd` every 5 minutes. Its triage is
+**deterministic Splunk-native tier-0** — it does not call any LLM. The verdict
+is the SPL detection severity, confidence is a function of severity, and a
+finding is flagged `poc_worthwhile` when the severity is HIGH or CRITICAL.
 
 ```mermaid
 sequenceDiagram
-    participant SPL as Splunk SPL search
+    participant SPL as SPL detections
     participant Idx as Splunk index
-    participant Agent as Argus agent
-    participant MCP as Splunk MCP Server
-    participant SAIA as Splunk AI Assistant
-    participant Anvil as Local Anvil fork
+    participant KV as kvstore (argus_agent_state)
+    participant Agent as argus_agent.py<br/>(modular input)
+    participant Anvil as Anvil + Foundry<br/>(external)
 
-    SPL->>Idx: anomalydetection / cluster / outlier
-    SPL->>Idx: writes layerzero:alert event
-    Agent->>MCP: tools/call splunk_run_query<br/>("look for new :alert events")
-    MCP->>Idx: SPL via official client
-    Idx-->>MCP: alert rows
-    MCP-->>Agent: alert dicts
-
-    Agent->>MCP: tools/call splunk_run_query<br/>(":audit_finding contracts=X vuln=Y")
-    MCP->>Idx: audit cross-reference query
-    Idx-->>MCP: 0 chunks (NOVEL)
-    MCP-->>Agent: novel candidate
-
-    Agent->>MCP: tools/call saia_ask_splunk_question<br/>(alert + source context)
-    MCP->>SAIA: prompt + context
-    SAIA-->>MCP: hypothesis + vuln class + PoC steps
-    MCP-->>Agent: verdict
-
-    Agent->>Agent: pick Foundry template,<br/>fill in addresses + block
-    Agent->>Anvil: start fork at block N-1
-    Agent->>Anvil: forge test exploit
-    Anvil-->>Agent: PASS / FAIL + state diff
-
-    alt CONFIRMED
-        Agent->>Idx: write layerzero:confirmed_finding
-        Agent->>Agent: generate submission.md draft
-        Agent->>Agent: fire macOS notification
-    else REJECTED
-        Agent->>Idx: write layerzero:fork_result (rejected)
+    SPL->>Idx: eventstats z-score / streamstats / predict / DBSCAN
+    SPL->>Idx: | collect → layerzero:alert
+    Note over Agent: runs inside splunkd every 5 min
+    Agent->>Idx: read new layerzero:alert events
+    Agent->>KV: dedup against argus_agent_state
+    KV-->>Agent: unseen alerts only
+    Agent->>Agent: deterministic tier-0 triage<br/>(reasoning_engine = splunk_native_tier0)<br/>verdict = SPL severity, confidence = f(severity)
+    Agent->>Idx: write layerzero:ai_report
+    alt poc_worthwhile (HIGH / CRITICAL)
+        Agent->>Idx: write layerzero:poc_trigger
+        Agent->>Anvil: validate_finding.py forks mainnet @ block N-1
+        Anvil->>Anvil: forge test exploit (.t.sol)
+        Anvil->>Idx: write layerzero:fork_result<br/>CONFIRMED only if test assertions pass<br/>else REJECTED · gain is null, never faked
+        Idx->>Idx: fork_result → enriches ai_report
+    else monitor only
+        Agent->>Agent: recommended_action = monitor
     end
 ```
+
+> **Roadmap (not in the live loop).** A separate LLM path exists —
+> `agent/splunk_ai.py` hosts a local **MLX Foundation-Sec** model for deeper
+> tier-1 reasoning — but it is **not wired into the live agent loop**. The old
+> `agent/mcp_agent.py` (MCP-over-SSE orchestrator) is **deprecated/unused**, and
+> the SAIA cloud LLM tenant was **never activated**. None of these run in the
+> shipped system.
 
 ## Splunk-native principles (what makes this "use Splunk correctly")
 
 | Principle | How Argus implements it |
 |---|---|
 | Detection is data-driven, not threshold-driven | `eventstats avg/stdev by contract` → z-score → flag |
-| SPL does the work, not Python | Agent only orchestrates; all analysis is SPL |
-| Splunk index = state store | Investigations, fork results, confirmed findings all indexed |
-| Lookups for enrichment | `bad_addresses.csv` joined on every tx |
-| Saved searches drive scheduling | Cron-scheduled SPL → alert events → agent reacts |
-| kvstore for structured state | `contract_baselines` rebuilt nightly |
-| Sourcetypes typed by intent | 11 typed sourcetypes, props.conf declared |
-| Agent should be dumb, Splunk is smart | Agent contains no detection logic — all SPL |
+| SPL does the work, not Python | The agent only triages/orchestrates; all detection is SPL |
+| Splunk index = state store | Alerts, AI reports, poc triggers, fork results all indexed |
+| The agent lives inside Splunk | `argus_agent.py` is a modular input running in `splunkd` |
+| Triage is deterministic & sovereign | tier-0 verdict = SPL severity; zero external AI calls |
+| kvstore for structured state | `contract_baselines` (baselines) + `argus_agent_state` (dedup) |
+| Sourcetypes typed by intent | typed `layerzero:*` sourcetypes, `props.conf` declared |
+| Ground truth from a real fork | Anvil + Foundry; honest CONFIRMED/REJECTED, gain never faked |
 
-## Splunk apps used (12 total)
+## Sourcetypes (index: `omni_guard_security`)
 
-| App | Role |
-|---|---|
-| Splunk MCP Server (1.1.3) | Official MCP interface — 14 tools |
-| Splunk AI Assistant (2.0.0) | Cloud-connected LLM tier (saia_* tools) |
-| Splunk AI Toolkit (5.7.4) | ML-SPL commands (fit/apply, DBSCAN, etc.) |
-| Python for Scientific Computing (4.3.2) | Runtime for AI Toolkit |
-| Splunk AI Canvas (1.4.1) | AI workspace |
-| Splunk Security Essentials (3.8.3) | Security pattern library |
-| InfoSec App (1.7.1) | Security dashboards |
-| Generic LLM Connector | Optional alternative LLM path |
-| TA-Triage | `\| triage` SPL command |
-| Slack Alerts (2.3.2) | Optional Slack notifications |
-| OmniGuard Security Monitor | This project's app — searches + dashboard + lookups |
-| Audit Trail (1.0.0) | Default Splunk audit log |
+| Sourcetype | Written by | Meaning |
+|---|---|---|
+| `layerzero:transaction` | ingestion | on-chain transactions |
+| `layerzero:event` | ingestion | decoded contract events |
+| `layerzero:source` | ingestion | Solidity source for in-scope contracts |
+| `layerzero:audit_finding` | ingestion | known findings from audit reports |
+| `layerzero:scope` | ingestion (`scope.json`) | Immunefi in-scope assets |
+| `layerzero:alert` | SPL detections (`\| collect`) | anomaly fired by a saved search |
+| `layerzero:ai_report` | `argus_agent.py` | tier-0 triage verdict |
+| `layerzero:poc_trigger` | `argus_agent.py` | hand-off to fork validation |
+| `layerzero:fork_result` | `validate_finding.py` | honest fork verdict |
 
 ## External components (not Splunk)
 
-- **Anvil** (Foundry) — local mainnet fork for ground-truth exploit validation
-- **Etherscan + Alchemy** — chain data ingestion
-- **Python ingestion scripts** — translate RPC responses into Splunk events
+- **Anvil + Foundry** — local mainnet fork for ground-truth exploit validation
+  (`poc/validate_finding.py`). Forks at block N-1, runs a `forge` exploit test,
+  and only reports CONFIRMED when the test's own assertions pass.
+- **Etherscan + JSON-RPC** — chain data ingestion.
+- **Python ingestion scripts** — translate RPC/Etherscan responses into typed
+  Splunk events over HEC.
 
-Everything else is Splunk.
+Everything else — detection, triage state, the in-app agent — is Splunk.

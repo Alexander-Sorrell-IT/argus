@@ -1,0 +1,40 @@
+# protocols/example-aave.yaml
+#
+# Second example protocol config, to prove the YAML swap is real:
+#   PROTOCOL=aave  re-points scope_loader at THIS file's contract set instead of
+#   LayerZero's, with no code change.
+#
+# HONESTY NOTE: this is an ILLUSTRATIVE-but-REAL Aave V3 (Ethereum mainnet)
+# contract set — a small, canonical subset, not Aave's full audited scope. The
+# addresses below are real on-chain Aave V3 mainnet contracts. A full Aave
+# ingestion has NOT been run; this file exists to demonstrate that the config
+# layer is genuinely protocol-agnostic. The `display` numbers are placeholders
+# for the dashboard lookup, clearly marked.
+
+protocol_name: aave
+program: "Aave V3 (example)"
+
+display:
+  protocol_name: Aave
+  protocol_full_name: Aave Protocol V3
+  protocol_tagline: lending protocol
+  total_var_display: $20B+        # illustrative placeholder
+  total_var_usd: 20000000000      # illustrative placeholder
+  contracts_in_scope: 5
+  audit_count: 0                  # no audits ingested for this example
+  audit_chunk_count: 0
+  source_files_count: 0           # no source ingested for this example
+  immunefi_program_url: https://immunefi.com/bug-bounty/aave/
+  max_bounty_critical: 1000000
+  max_bounty_high: 250000
+
+# No source_roots / audit_path: ingestion of Aave code/audits not set up for
+# this example. ingest_source.py / ingest_audit_findings.py keep their defaults
+# unless these are present and exported to env.
+
+contracts:
+  - { name: "Aave V3 Pool", address: "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2", chain: ethereum }
+  - { name: "Aave V3 PoolAddressesProvider", address: "0x2f39d218133afab8f2b819b1066c7e434ad94e9e", chain: ethereum }
+  - { name: "AAVE token", address: "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9", chain: ethereum }
+  - { name: "aEthWETH (aToken)", address: "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8", chain: ethereum }
+  - { name: "aEthUSDC (aToken)", address: "0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c", chain: ethereum }

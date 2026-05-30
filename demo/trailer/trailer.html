@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ARGUS — Trailer</title>
+<script src="./gsap.min.js"></script>
+<style>
+  :root{
+    --bg:#0a0f1f;
+    --bg2:#0d1426;
+    --blue:#5b9dff;
+    --purple:#9b8cff;
+    --ink:#eaf1ff;
+    --dim:#8aa0c8;
+    --green:#43d6a0;
+    --red:#ff5d73;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:#000;overflow:hidden;}
+  #stage{
+    position:fixed;left:0;top:0;
+    width:1920px;height:1080px;
+    background:
+      radial-gradient(1200px 700px at 50% 38%, #12203f 0%, var(--bg) 55%, #05080f 100%);
+    font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    overflow:hidden;
+  }
+  /* ---- animated background layers ---- */
+  .grid{
+    position:absolute;inset:-200px;
+    background-image:
+      linear-gradient(rgba(91,157,255,0.07) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(91,157,255,0.07) 1px,transparent 1px);
+    background-size:64px 64px;
+    transform:perspective(700px) rotateX(58deg) translateY(140px) scale(1.6);
+    transform-origin:50% 0%;
+    opacity:0;
+    mask-image:radial-gradient(900px 520px at 50% 60%, #000 30%, transparent 78%);
+    -webkit-mask-image:radial-gradient(900px 520px at 50% 60%, #000 30%, transparent 78%);
+  }
+  .scan{
+    position:absolute;left:0;width:100%;height:240px;top:-260px;
+    background:linear-gradient(180deg,transparent,rgba(91,157,255,0.10),transparent);
+    opacity:0;
+  }
+  .vignette{
+    position:absolute;inset:0;pointer-events:none;
+    box-shadow:inset 0 0 420px 120px rgba(0,0,0,0.85);
+  }
+  .noise{position:absolute;inset:0;opacity:0.04;pointer-events:none;
+    background-image:radial-gradient(rgba(255,255,255,0.6) 0.5px,transparent 0.6px);
+    background-size:3px 3px;}
+
+  /* ---- generic beat container ---- */
+  .beat{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;visibility:hidden;}
+
+  .line{font-weight:700;letter-spacing:-0.5px;line-height:1.18;}
+  .l-xl{font-size:78px;}
+  .l-lg{font-size:64px;}
+  .l-md{font-size:52px;}
+  .l-sm{font-size:34px;color:var(--dim);font-weight:500;}
+  .accent{color:var(--blue);}
+  .accent2{color:var(--purple);}
+  .word{display:inline-block;will-change:transform,opacity,filter;}
+  .row{overflow:hidden;padding:6px 0;}
+
+  /* small label / kicker */
+  .kicker{font-size:22px;letter-spacing:6px;color:var(--blue);
+    text-transform:uppercase;font-weight:600;margin-bottom:26px;opacity:0;}
+
+  /* ---- prompt / terminal flavor for beat 1 ---- */
+  .term{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:30px;color:var(--green);
+    margin-top:40px;opacity:0;letter-spacing:0;}
+  .term .muted{color:var(--dim);}
+  .caret{display:inline-block;width:14px;height:32px;background:var(--green);
+    transform:translateY(6px);margin-left:4px;}
+
+  /* ---- ARGUS logo ---- */
+  #logoBeat{}
+  .logo-wrap{position:relative;display:flex;flex-direction:column;align-items:center;}
+  .eye{width:150px;height:150px;margin-bottom:30px;opacity:0;will-change:transform,opacity;}
+  .logo{font-size:210px;font-weight:800;letter-spacing:8px;line-height:1;
+    display:flex;justify-content:center;}
+  /* each letter carries its OWN gradient fill so background-clip:text works per-span */
+  .lchar{display:inline-block;will-change:transform,opacity,filter;
+    background:linear-gradient(180deg,#eef4ff 0%,var(--blue) 55%,var(--purple) 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    color:transparent;
+    filter:drop-shadow(0 0 26px rgba(91,157,255,0.45));}
+  .logo-sub{font-size:40px;color:var(--ink);font-weight:600;margin-top:18px;opacity:0;}
+  .logo-sub .accent{color:var(--blue);}
+  .glow{position:absolute;left:50%;top:46%;width:900px;height:520px;
+    transform:translate(-50%,-50%);border-radius:50%;
+    background:radial-gradient(circle,rgba(91,157,255,0.35),transparent 62%);
+    filter:blur(20px);opacity:0;pointer-events:none;}
+  .ring{position:absolute;left:50%;top:46%;width:520px;height:520px;
+    transform:translate(-50%,-50%) scale(0.4);border:2px solid rgba(91,157,255,0.5);
+    border-radius:50%;opacity:0;}
+
+  /* ---- capability chips ---- */
+  .chips{display:flex;flex-wrap:wrap;gap:26px;justify-content:center;
+    max-width:1300px;margin-top:18px;}
+  .chip{font-size:40px;font-weight:700;padding:26px 46px;border-radius:18px;
+    border:1px solid rgba(91,157,255,0.35);
+    background:linear-gradient(180deg,rgba(91,157,255,0.10),rgba(155,140,255,0.06));
+    box-shadow:0 10px 40px rgba(0,0,0,0.4),inset 0 0 0 1px rgba(255,255,255,0.02);
+    display:flex;align-items:center;gap:18px;opacity:0;will-change:transform,opacity;}
+  .dot{width:16px;height:16px;border-radius:50%;background:var(--green);
+    box-shadow:0 0 18px var(--green);}
+  .dot.b{background:var(--blue);box-shadow:0 0 18px var(--blue);}
+  .dot.p{background:var(--purple);box-shadow:0 0 18px var(--purple);}
+  .dot.r{background:var(--red);box-shadow:0 0 18px var(--red);}
+
+  /* ---- end card ---- */
+  .endcard{gap:0;}
+  .end-logo{font-size:120px;font-weight:800;letter-spacing:6px;
+    background:linear-gradient(180deg,#eef4ff,var(--blue));
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;color:transparent;opacity:0;
+    filter:drop-shadow(0 0 22px rgba(91,157,255,0.4));}
+  .end-line{font-size:38px;color:var(--dim);margin-top:24px;opacity:0;font-weight:500;}
+  .end-line b{color:var(--ink);font-weight:700;}
+  .hr{width:0px;height:2px;margin:34px 0;
+    background:linear-gradient(90deg,transparent,var(--blue),var(--purple),transparent);opacity:0;}
+
+  /* fade-to-black overlay for transitions */
+  #flash{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="grid" id="grid"></div>
+  <div class="scan" id="scan"></div>
+
+  <!-- BEAT 1 -->
+  <div class="beat" id="beat1">
+    <div class="kicker" id="b1k">Live Protocol Monitoring</div>
+    <div class="row"><div class="line l-xl" id="b1a"></div></div>
+    <div class="term" id="b1term"><span class="muted">$</span> tail -f /protocol/live.log<span class="caret" id="caret"></span></div>
+    <div class="row" style="margin-top:18px"><div class="line l-md" id="b1b"></div></div>
+  </div>
+
+  <!-- BEAT 2 -->
+  <div class="beat" id="beat2">
+    <div class="row"><div class="line l-lg" id="b2a"></div></div>
+    <div class="row" style="margin-top:30px"><div class="line l-md" id="b2b"></div></div>
+    <div class="row"><div class="line l-md" id="b2c"></div></div>
+  </div>
+
+  <!-- BEAT 3 logo -->
+  <div class="beat" id="beat3">
+    <div class="glow" id="glow"></div>
+    <div class="ring" id="ring"></div>
+    <div class="ring" id="ring2"></div>
+    <div class="logo-wrap">
+      <svg class="eye" id="eye" viewBox="0 0 100 100" fill="none">
+        <path d="M5 50 C25 22 75 22 95 50 C75 78 25 78 5 50 Z" stroke="#5b9dff" stroke-width="3"/>
+        <circle cx="50" cy="50" r="18" stroke="#9b8cff" stroke-width="3"/>
+        <circle cx="50" cy="50" r="7" fill="#5b9dff"/>
+      </svg>
+      <div class="logo" id="logo">ARGUS</div>
+      <div class="logo-sub" id="logosub">a SOC for smart contracts — built entirely in <span class="accent">Splunk</span>.</div>
+    </div>
+  </div>
+
+  <!-- BEAT 4 chips -->
+  <div class="beat" id="beat4">
+    <div class="kicker" id="b4k" style="opacity:0">Inside Argus</div>
+    <div class="chips" id="chips">
+      <div class="chip"><span class="dot b"></span>SPL detections</div>
+      <div class="chip"><span class="dot p"></span>In-app AI agent</div>
+      <div class="chip"><span class="dot"></span>Fork-validated on mainnet</div>
+      <div class="chip"><span class="dot r"></span>Zero external AI</div>
+    </div>
+  </div>
+
+  <!-- BEAT 5 end card -->
+  <div class="beat endcard" id="beat5">
+    <div class="end-logo" id="elogo">ARGUS</div>
+    <div class="hr" id="ehr"></div>
+    <div class="end-line" id="eline1"><b>Splunk Agentic Ops Hackathon 2026</b></div>
+    <div class="end-line" id="eline2">Security</div>
+  </div>
+
+  <div class="vignette"></div>
+  <div class="noise"></div>
+  <div id="flash"></div>
+</div>
+
+<script>
+/* split a string into animatable word spans */
+function splitWords(el, text){
+  el.innerHTML = '';
+  text.split(' ').forEach((w,i)=>{
+    const s=document.createElement('span');
+    s.className='word';
+    const clean = w.replace(/__BLUE__/g,'').replace(/__PUR__/g,'');
+    s.textContent = clean;
+    if(w.includes('__BLUE__')) s.classList.add('accent');
+    if(w.includes('__PUR__'))  s.classList.add('accent2');
+    el.appendChild(s);
+    el.appendChild(document.createTextNode(' '));
+  });
+  return el.querySelectorAll('.word');
+}
+
+function show(id){ document.getElementById(id).style.visibility='visible'; }
+function hide(id){ document.getElementById(id).style.visibility='hidden'; }
+
+window.buildTimeline = function(){
+  gsap.set('#stage',{opacity:1});
+
+  // populate text
+  const b1a = splitWords(document.getElementById('b1a'), 'Smart contracts run for years.');
+  const b1b = splitWords(document.getElementById('b1b'), 'There is no __BLUE__tail __BLUE__-f for a live protocol.');
+  const b2a = splitWords(document.getElementById('b2a'), '__BLUE__$Billions move between chains every day.');
+  const b2b = splitWords(document.getElementById('b2b'), 'When something breaks,');
+  const b2c = splitWords(document.getElementById('b2c'), 'you hear about it on __PUR__Telegram — an hour too late.');
+
+  const tl = gsap.timeline({onComplete:()=>{ window.__done=true; }});
+
+  // ambient background lives the whole time
+  gsap.to('#grid',{opacity:1,duration:2,ease:'power1.out'});
+  gsap.fromTo('#grid',{backgroundPositionY:'0px'},{backgroundPositionY:'64px',duration:3,repeat:-1,ease:'none'});
+  gsap.to('#scan',{top:'1080px',duration:6,repeat:-1,ease:'sine.inOut',opacity:1,delay:0.5});
+
+  /* ============ BEAT 1 (0 - 7.5s) ============ */
+  tl.add(()=>show('beat1'),0);
+  tl.to('#b1k',{opacity:1,duration:0.6},0.2);
+  tl.from(b1a,{y:90,opacity:0,filter:'blur(12px)',duration:0.9,stagger:0.08,ease:'power3.out'},0.5);
+  // terminal types in, then caret blinks
+  tl.to('#b1term',{opacity:1,duration:0.5},1.7);
+  tl.to('#caret',{opacity:0,duration:0.25,repeat:6,yoyo:true,ease:'steps(1)'},2.0);
+  tl.from(b1b,{y:60,opacity:0,filter:'blur(8px)',duration:0.8,stagger:0.06,ease:'power3.out'},3.0);
+  tl.to('#b1term .muted, #b1term',{},4.0);
+  // glitch the tail command red briefly to imply "no such thing"
+  tl.to('#b1term',{color:'#ff5d73',duration:0.18,repeat:1,yoyo:true},4.4);
+  tl.to('#beat1',{opacity:0,filter:'blur(6px)',duration:0.7,ease:'power2.in'},6.6);
+  tl.add(()=>{hide('beat1');gsap.set('#beat1',{opacity:1,filter:'none'});},7.4);
+
+  /* ============ BEAT 2 (7.4 - 15s) ============ */
+  tl.add(()=>show('beat2'),7.4);
+  tl.from(b2a,{y:80,opacity:0,filter:'blur(10px)',duration:0.9,stagger:0.06,ease:'power3.out'},7.6);
+  tl.from('#b2a .accent',{scale:1.25,color:'#9b8cff',duration:0.6,ease:'back.out(2)'},8.0);
+  tl.from(b2b,{x:-50,opacity:0,duration:0.7,stagger:0.05,ease:'power2.out'},9.6);
+  tl.from(b2c,{x:40,opacity:0,duration:0.8,stagger:0.04,ease:'power2.out'},10.4);
+  // pulse the Telegram word red — "too late"
+  tl.to('#b2c .accent2',{color:'#ff5d73',textShadow:'0 0 24px rgba(255,93,115,0.7)',duration:0.4,repeat:1,yoyo:true},12.4);
+  tl.to('#beat2',{opacity:0,scale:1.05,filter:'blur(8px)',duration:0.7,ease:'power2.in'},14.0);
+  tl.add(()=>{hide('beat2');},14.9);
+
+  /* flash to logo */
+  tl.to('#flash',{opacity:1,duration:0.25,ease:'power2.in'},14.8);
+  tl.set('#flash',{opacity:0},15.1);
+
+  /* ============ BEAT 3 logo (15 - 24s) ============ */
+  tl.add(()=>show('beat3'),15.0);
+  tl.to('#glow',{opacity:1,duration:1.0,ease:'power2.out'},15.1);
+  tl.to('#eye',{opacity:1,rotate:360,scale:1,duration:1.2,ease:'power3.out'},15.1);
+  tl.fromTo('#eye',{scale:0.3},{scale:1,duration:1.2,ease:'back.out(1.6)'},15.1);
+  // ring expansions
+  tl.fromTo('#ring',{opacity:0.6,scale:0.4},{opacity:0,scale:1.6,duration:1.4,ease:'power2.out'},15.2);
+  tl.fromTo('#ring2',{opacity:0.4,scale:0.4},{opacity:0,scale:2.1,duration:1.8,ease:'power2.out'},15.5);
+  // logo letters — each span carries its own gradient fill (.lchar) so it renders crisp
+  const logoEl=document.getElementById('logo');
+  const chars='ARGUS'.split('').map(c=>{const s=document.createElement('span');s.textContent=c;s.className='lchar';return s;});
+  logoEl.innerHTML=''; chars.forEach(c=>logoEl.appendChild(c));
+  // animate transform/opacity only; CSS keeps the gradient + drop-shadow crisp at rest
+  tl.fromTo(chars,{y:120,opacity:0,rotateX:-90},{y:0,opacity:1,rotateX:0,duration:1.0,stagger:0.1,ease:'power4.out'},15.7);
+  tl.fromTo('#logosub',{opacity:0,y:30},{opacity:1,y:0,duration:0.9,ease:'power2.out'},17.6);
+  // gentle breathing glow hold
+  tl.to('#glow',{opacity:0.7,scale:1.05,duration:1.6,yoyo:true,repeat:1,ease:'sine.inOut'},18.6);
+  tl.to('#beat3',{opacity:0,scale:0.92,filter:'blur(10px)',duration:0.8,ease:'power2.in'},23.0);
+  tl.add(()=>{hide('beat3');},23.9);
+
+  /* ============ BEAT 4 chips (24 - 31s) ============ */
+  tl.add(()=>show('beat4'),24.0);
+  tl.to('#b4k',{opacity:1,duration:0.5},24.0);
+  const chipEls=document.querySelectorAll('#chips .chip');
+  tl.fromTo(chipEls,{y:70,opacity:0,scale:0.8},{y:0,opacity:1,scale:1,duration:0.6,stagger:0.22,ease:'back.out(1.8)'},24.3);
+  // each chip gets a little glow pop as it lands
+  chipEls.forEach((c,i)=>{
+    tl.fromTo(c,{boxShadow:'0 0 0px rgba(91,157,255,0)'},
+      {boxShadow:'0 0 34px rgba(91,157,255,0.45),inset 0 0 0 1px rgba(255,255,255,0.04)',duration:0.4,yoyo:true,repeat:1,ease:'sine.inOut'},24.5+i*0.22);
+  });
+  tl.to('#chips',{scale:1.04,duration:1.0,yoyo:true,repeat:1,ease:'sine.inOut'},26.2);
+  tl.to('#beat4',{opacity:0,filter:'blur(8px)',duration:0.8,ease:'power2.in'},30.0);
+  tl.add(()=>{hide('beat4');},30.9);
+
+  /* ============ BEAT 5 end card (31 - 37s) ============ */
+  tl.add(()=>show('beat5'),31.0);
+  tl.fromTo('#elogo',{opacity:0,y:50,scale:0.9},{opacity:1,y:0,scale:1,duration:1.0,ease:'power3.out'},31.1);
+  tl.to('#ehr',{width:'520px',opacity:1,duration:0.9,ease:'power2.out'},31.9);
+  tl.fromTo('#eline1',{opacity:0,y:24},{opacity:1,y:0,duration:0.7,ease:'power2.out'},32.5);
+  tl.fromTo('#eline2',{opacity:0,y:24},{opacity:1,y:0,duration:0.7,ease:'power2.out'},33.0);
+  tl.fromTo('#elogo',{filter:'drop-shadow(0 0 22px rgba(91,157,255,0.4))'},{filter:'drop-shadow(0 0 44px rgba(91,157,255,0.65))',duration:1.4,yoyo:true,repeat:1,ease:'sine.inOut'},33.8);
+  // slow fade out at very end
+  tl.to('#stage',{opacity:1,duration:1},34.5);
+  tl.to('#flash',{opacity:1,duration:1.4,ease:'power2.in'},35.4);
+
+  return tl;
+};
+
+window.__ready=true;
+</script>
+</body>
+</html>

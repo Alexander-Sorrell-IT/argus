@@ -15,7 +15,7 @@ REPO     = Path(__file__).resolve().parents[1]
 FEED_LOG = REPO / "logs" / "findings_feed.log"
 
 
-def notify_macos(title: str, message: str, subtitle: str = "OmniGuard"):
+def notify_macos(title: str, message: str, subtitle: str = "Argus"):
     """Fire a macOS Notification Center banner. Silent on other platforms."""
     if not _is_macos():
         return
@@ -42,15 +42,20 @@ def append_feed(text: str):
 
 
 def confirmed_finding(finding_id: str, contract_name: str, vuln_class: str,
-                      attacker_gain_eth: float = 0.0, submission_path: str = ""):
-    """Announce a confirmed finding."""
-    title = "🚨 OmniGuard — Confirmed Finding"
+                      attacker_gain_eth=None, submission_path: str = ""):
+    """Announce a confirmed finding. attacker_gain_eth may be None — the fork
+    validator no longer measures fork-node balance diffs (gain is asserted inside
+    the test), so guard every numeric use of it (None crashed the page + feed)."""
+    title = "🚨 Argus — Confirmed Finding"
     msg = f"{contract_name}: {vuln_class}"
-    if attacker_gain_eth > 0:
+    if isinstance(attacker_gain_eth, (int, float)) and attacker_gain_eth > 0:
         msg += f" (attacker +{attacker_gain_eth:.4f} ETH on fork)"
     notify_macos(title, msg)
+    gain_str = (f"{attacker_gain_eth:.6f} ETH"
+                if isinstance(attacker_gain_eth, (int, float))
+                else "asserted-by-test (not fork-measured)")
     feed = (f"CONFIRMED {finding_id} | {contract_name} | {vuln_class}"
-            f" | attacker_gain={attacker_gain_eth:.6f} ETH")
+            f" | attacker_gain={gain_str}")
     if submission_path:
         feed += f" | submission: {submission_path}"
     append_feed(feed)
@@ -58,7 +63,7 @@ def confirmed_finding(finding_id: str, contract_name: str, vuln_class: str,
 
 def escalation(finding_id: str, summary: str, severity: str = "HIGH"):
     """Lower-priority signal: finding hit deep investigation but not yet validated."""
-    title = f"OmniGuard — Escalation ({severity})"
+    title = f"Argus — Escalation ({severity})"
     notify_macos(title, summary[:240])
     append_feed(f"ESCALATION {finding_id} | {severity} | {summary[:200]}")
 

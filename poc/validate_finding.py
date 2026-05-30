@@ -25,7 +25,7 @@ Library:
                         foundry_test=Path("poc/findings/x/Exploit.t.sol"))
 """
 from __future__ import annotations
-import os, sys, json, time, subprocess, signal, argparse, logging
+import os, sys, json, time, re, subprocess, signal, argparse, logging
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
@@ -156,7 +156,15 @@ class ForkValidator:
             r = subprocess.run(cmd, capture_output=True, text=True,
                                timeout=180, env=env)
             out = r.stdout + "\n" + r.stderr
-            passed = ("PASSED" in out and "FAILED" not in out) or r.returncode == 0
+            # Require genuine pass evidence. `forge test` exits 0 even on "No tests
+            # found", so returncode is NOT sufficient — that produced false CONFIRMEDs.
+            # Parse the summary: need >=1 passed and 0 failed; else look for [PASS]/[FAIL].
+            ran = re.search(r"(\d+)\s+passed[,;]\s*(\d+)\s+failed", out)
+            if ran:
+                npass, nfail = int(ran.group(1)), int(ran.group(2))
+                passed = (npass >= 1 and nfail == 0)
+            else:
+                passed = ("[PASS]" in out) and ("[FAIL]" not in out) and ("No tests" not in out)
             return passed, out[-4000:]
         except subprocess.TimeoutExpired:
             return False, "forge test timed out after 180s"
@@ -208,17 +216,18 @@ class ForkValidator:
             if target_address:    post[target_address]    = self._balance(target_address)
             if attacker_address:  post[attacker_address]  = self._balance(attacker_address)
 
-            attacker_gain = (post.get(attacker_address,0) - pre.get(attacker_address,0)) / 1e18 \
-                            if attacker_address else 0.0
-            target_loss   = (pre.get(target_address,0) - post.get(target_address,0)) / 1e18 \
-                            if target_address else 0.0
+            # NOTE: `forge test --fork-url` runs in its OWN in-memory fork; it does NOT
+            # mutate this anvil instance, so a cast-balance pre/post diff is structurally
+            # ~0 and must NOT be reported as proof of gain. Ground truth is the test's own
+            # internal assertions (it PASSES only if the exploit reproduced). We therefore
+            # do not fabricate a measured ETH figure — gain is None ("not measured here").
+            attacker_gain = None
+            target_loss = None
 
-            # Decision
-            if test_passed and (attacker_gain > 0.01 or target_loss > 0.01):
-                status, conf, reason = "CONFIRMED", 0.9, \
-                    f"forge test passed + attacker gained {attacker_gain:.4f} ETH"
-            elif test_passed:
-                status, conf, reason = "CONFIRMED", 0.6, "forge test passed (no state extraction observed)"
+            # Decision — based solely on the Foundry test's own assertions.
+            if test_passed:
+                status, conf, reason = "CONFIRMED", 0.7, \
+                    "Foundry exploit test passed — exploit reproduced per the test's own assertions on a local fork (ETH gain is asserted inside the test, not measured via fork balances)"
             elif test_passed is False:
                 status, conf, reason = "REJECTED", 0.8, "forge test failed — exploit hypothesis did not reproduce"
             else:
@@ -228,8 +237,8 @@ class ForkValidator:
                 finding_id=finding_id, tx_hash=tx_hash, chain=chain, fork_block=fork_block,
                 status=status, confidence=conf,
                 state_diff={"pre": pre, "post": post},
-                attacker_gain_eth=round(attacker_gain, 6),
-                target_loss_eth=round(target_loss, 6),
+                attacker_gain_eth=attacker_gain,
+                target_loss_eth=target_loss,
                 test_passed=test_passed, test_output=test_out,
                 trace_summary=trace_summary, reason=reason,
                 duration_secs=round(time.time() - t0, 2),

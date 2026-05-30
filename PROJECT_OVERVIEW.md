@@ -6,8 +6,10 @@
 > Argus is a Splunk-native AI security platform that monitors arbitrary DeFi
 > protocols via a single YAML config. It detects on-chain anomalies with SPL,
 > filters out already-documented findings against a local audit corpus,
-> hypothesizes vulnerabilities via the Splunk-hosted LLM, and validates
-> exploits locally against an Anvil mainnet fork.
+> triages each novel candidate with an in-app AI agent (a Splunk modular
+> input running deterministic, Splunk-native tier-0 scoring), and validates
+> exploits locally against an Anvil mainnet fork. Zero external AI in the
+> live path.
 
 ---
 
@@ -36,14 +38,14 @@ Every layer leans on Splunk's own primitives, not external code:
 
 | Layer | Splunk primitive used |
 |---|---|
-| Detection | SPL `anomalydetection`, `cluster`, `outlier`, `streamstats`, `predict`, `transaction`, `eventstats` (z-score per contract) |
-| Filtering | SPL JOIN against `layerzero:audit_finding` index (112 audits, 1,276 chunks) |
+| Detection | SPL `eventstats` (z-score per contract), `streamstats`, `predict`, `cluster`, MLTK DBSCAN — ~14 SPL detections |
+| Filtering | SPL JOIN against `layerzero:audit_finding` index (1,288 audit chunks) |
 | Source code analysis | `layerzero:source` indexed (197 Solidity files), SPL pattern matching |
 | Enrichment | `bad_addresses.csv` lookup (chainabuse + OFAC) |
 | State | Splunk kvstore (`contract_baselines` collection) — nightly rebuild via saved search |
-| AI reasoning | Splunk MCP Server (official) + Splunk AI Assistant (`saia_ask_splunk_question`, `saia_generate_spl`, `saia_explain_spl`, `saia_optimize_spl`) |
-| Agent orchestration | Argus agent talks to Splunk only through MCP — no direct REST, no external creds in code |
-| Output | Typed sourcetypes: `:transaction`, `:event`, `:source`, `:audit_finding`, `:scope`, `:alert`, `:ai_report`, `:fork_result`, `:confirmed_finding`, `:poc_trigger`, `:static_finding` |
+| AI agent (live) | `argus_agent.py` modular input running in `splunkd` via the Splunk Python SDK; 5-min interval; deterministic Splunk-native tier-0 triage (`reasoning_engine = splunk_native_tier0`); writes `layerzero:ai_report` + `layerzero:poc_trigger`, KV-deduped by finding signature |
+| AI reasoning (roadmap) | local-MLX Foundation-Sec LLM (`agent/splunk_ai.py`) + official MCP Server + Splunk AI Assistant (SAIA) — integrated but **not** the live reasoning path |
+| Output | Typed sourcetypes: `:transaction`, `:event`, `:source`, `:audit_finding`, `:scope`, `:alert`, `:ai_report`, `:fork_result`, `:poc_trigger`, `:static_finding` |
 | Notifications | macOS notify + `findings_feed.log` + Slack alert action |
 
 ---
@@ -56,11 +58,11 @@ Every layer leans on Splunk's own primitives, not external code:
    protocols/<name>.yaml      ─── contracts, chains, source path, audit path
    on-chain history           ─── tx + events + internal tx since deploy
    Solidity source            ─── parsed into indexable per-file events
-   audit corpus (112 PDFs → 1,290 indexed chunks) ─── extracted, structured fields
+   audit corpus (→ 1,288 indexed chunks) ─── extracted, structured fields
    Immunefi rules             ─── scope contracts + impact tiers + bounty caps
                               │
                               ▼
-   DETECTION (10 saved searches, cron 5m–6h)
+   DETECTION (~14 SPL detections, cron 5m–6h)
    ─────────────────────────────────────────
    1. Value Outlier (z-score per contract, kvstore baseline)
    2. Sender Behavior Outlier
@@ -81,24 +83,29 @@ Every layer leans on Splunk's own primitives, not external code:
      • If novel → keep as candidate finding
                               │
                               ▼
-   AI INVESTIGATION (Splunk AI Assistant via MCP)
+   AI AGENT TRIAGE (in-app modular input — LIVE)
    ──────────────────────────────────────────────
-   • saia_ask_splunk_question — hypothesis + severity classification
-   • saia_generate_spl — auto-build a follow-up detection from natural language
-   • Uses Splunk-hosted LLM via cloud-connected mode (no GPU, no external API)
+   • argus_agent.py runs in splunkd every 5 min via the Splunk Python SDK
+   • Pulls distinct recent findings from layerzero:alert (deduped by signature)
+   • Triages each into a structured verdict: severity → vulnerability class,
+     confidence, recommended action (deterministic Splunk-native tier-0)
+   • Writes layerzero:ai_report + layerzero:poc_trigger; KV-deduped so a
+     re-firing alert never floods or re-works
+   • No external model in the loop (reasoning_engine = splunk_native_tier0).
+     Foundation-Sec LLM / MCP / SAIA are integrated but roadmap, not live.
                               │
                               ▼
    FORK VALIDATION (Anvil mainnet fork + Foundry test)
    ────────────────────────────────────────────────────
-   • Spin Anvil at block N-1 of suspicious tx
-   • Run generated/template-based exploit test against fork
-   • Diff attacker/target balances → CONFIRMED | REJECTED
+   • poc/validate_finding.py spins Anvil, forking ETH mainnet at block N-1
+   • Run template-based exploit test against fork
+   • Diff attacker/target balances → honest CONFIRMED | REJECTED
+     (gain reported null, never fabricated)
    • Writes layerzero:fork_result event
                               │
                               ▼ if CONFIRMED
    STRUCTURED OUTPUT
    ─────────────────
-   • layerzero:confirmed_finding event indexed
    • Immunefi submission.md draft auto-generated in poc/findings/<id>/
    • macOS notification fires
    • findings_feed.log appended
@@ -111,17 +118,17 @@ Every layer leans on Splunk's own primitives, not external code:
 
 | App | Purpose |
 |---|---|
-| Splunk MCP Server (1.1.3) | Official MCP interface, 14 tools exposed |
-| Splunk AI Assistant (2.0.0) | Cloud-connected LLM tier — `saia_*` tools |
-| Splunk AI Toolkit (5.7.4) | Advanced SPL ML commands |
-| Splunk AI Canvas (1.4.1) | AI workspace |
+| Argus Security Monitor (this app) | Custom SPL detections + dashboard + lookups + the live `argus_agent` modular input |
+| Splunk AI Toolkit (5.7.4) | MLTK ML-SPL commands (DBSCAN clustering) |
 | Python for Scientific Computing (Apple Silicon 4.3.2) | Runtime for AI Toolkit |
 | Splunk Security Essentials (3.8.3) | Pre-built security patterns library |
+| Splunk MCP Server (1.1.3) | Official MCP interface — integrated, **roadmap** reasoning path (not the live agent) |
+| Splunk AI Assistant (2.0.0) | Cloud-connected LLM tier (SAIA) — integrated but **never activated**; roadmap, not live |
+| Splunk AI Canvas (1.4.1) | AI workspace (roadmap) |
 | InfoSec App (1.7.1) | Security dashboards |
-| Generic LLM Connector | Optional alternative LLM path |
+| Generic LLM Connector | Optional alternative LLM path (roadmap) |
 | TA-Triage | `\| triage` SPL command |
 | Slack Alerts (2.3.2) | Optional Slack notifications |
-| Argus / OmniGuard Security Monitor (this app) | Custom searches + dashboard + lookups |
 | Audit Trail (1.0.0) | Default Splunk audit log |
 
 ---
@@ -130,17 +137,17 @@ Every layer leans on Splunk's own primitives, not external code:
 
 | Sourcetype | Count | Purpose |
 |---|---|---|
-| `layerzero:transaction` | ~1.2M+ (growing) | On-chain transactions |
-| `layerzero:event` | 86k+ | On-chain events / logs |
+| `layerzero:transaction` | ~335k (growing) | On-chain transactions |
+| `layerzero:event` | ~907k | On-chain events / logs |
 | `layerzero:source` | 197 | Solidity source files |
-| `layerzero:audit_finding` | 1,290 | Audit corpus chunks (17 auditors) |
-| `layerzero:scope` | 28 | Immunefi scope + reward tiers |
-| `layerzero:alert` | growing | SPL detection hits |
-| `layerzero:ai_report` | 0 (until SAIA live) | LLM investigation outputs |
-| `layerzero:fork_result` | growing | Anvil PoC validation results |
-| `layerzero:confirmed_finding` | 0 (waiting) | Validated exploits |
+| `layerzero:audit_finding` | 1,288 | Audit corpus chunks |
+| `layerzero:scope` | growing | Immunefi scope + reward tiers |
+| `layerzero:alert` | growing | SPL detection hits (9 value-manipulation candidates surfaced) |
+| `layerzero:ai_report` | 21 | In-app agent triage verdicts (live, Splunk-native tier-0) |
+| `layerzero:poc_trigger` | growing | Fork-validation triggers emitted by the agent |
+| `layerzero:fork_result` | growing | Anvil PoC validation results (honest CONFIRMED/REJECTED) |
 | `bad_addresses.csv` lookup | 10 | Known-malicious sender list |
-| `contract_baselines` kvstore | 5+ (growing) | Per-contract statistical baselines |
+| `contract_baselines` kvstore | growing | Per-contract statistical baselines (15 contracts monitored) |
 
 ---
 
@@ -150,34 +157,33 @@ Every layer leans on Splunk's own primitives, not external code:
 |---|---|---|
 | Grand Prize | 7,000 | Productizable platform; YAML-configurable for any protocol; novel fork-validation workflow |
 | Best of Security | 3,000 | Real cross-chain protocol security tool, ground-truth validation, MITRE-mappable |
-| Best Use of Splunk MCP Server | 1,000 | Agent talks to Splunk only through official MCP Server (14 tools, encrypted token auth) |
-| Best Use of Splunk Hosted Models | 1,000 | Tier-1 triage + hypothesis generation via Splunk AI Assistant cloud-connected mode |
-| Best Use of Splunk Developer Tools | 1,000 | AI Assistant used for SPL generation during build, documented in repo |
+| Best AI Agent for Splunk Apps | — | **Live, scored capability.** `argus_agent.py` is an in-app modular input running inside `splunkd` via the Splunk Python SDK: it drives Splunk end-to-end (read findings → triage → write `:ai_report` → trigger fork validation), KV-deduped and idempotent. Deterministic, Splunk-native, sovereign (zero external AI) |
+| Best Use of Splunk MCP Server | 1,000 | **Roadmap, not live.** MCP Server is installed and integrated as an alternative reasoning path (`agent/mcp_agent.py`); the live triage loop does not depend on it |
+| Best Use of Splunk Hosted Models | 1,000 | **Roadmap, not live.** SAIA / hosted-model and the local-MLX Foundation-Sec LLM (`agent/splunk_ai.py`) are integrated but never activated; live verdicts come from deterministic Splunk-native scoring |
 | Most Valuable Feedback | 200 | Detailed feedback to Splunk team on app integration friction |
-| **Ceiling** | **~13,200** | |
 
 ---
 
 ## Six-month roadmap
 
-Hackathon deadline is **Jun 15, 2026**. Dev license + SAIA are valid for **6 months**, so Argus runs through **Nov 2026**.
+Hackathon deadline is **Jun 15, 2026**. Dev license is valid for **6 months**, so Argus runs through **Nov 2026**.
 
 - **Weeks 1-3 (now → Jun 15):** ship hackathon submission, demo polish, video, architecture diagram, Devpost
 - **Months 1-2 post-hackathon:** continuous LayerZero monitoring, tune detections based on actual signal, expand to multi-protocol YAML configs
-- **Months 3-4:** apply Argus to additional Immunefi protocols (Aave, Compound, Uniswap, EigenLayer)
-- **Months 5-6:** harden, document, consider commercialization
+- **Months 3-4:** activate the roadmap reasoning path — wire the in-app agent to the local-MLX Foundation-Sec LLM and/or SAIA via MCP for richer (non-deterministic) hypothesis generation, on top of the deterministic tier-0 floor
+- **Months 5-6:** apply Argus to additional Immunefi protocols (Aave, Compound, Uniswap, EigenLayer); harden, document, consider commercialization
 
 ---
 
 ## Status
 
 - ✅ Pipeline plumbing complete end-to-end
-- ✅ All Splunk-native principles satisfied
-- ✅ 12 Splunk apps installed and configured
-- ✅ Audit corpus indexed and SPL-queryable
-- ✅ Anvil fork validation working
+- ✅ All Splunk-native principles satisfied (sovereign: zero external AI in the live path)
+- ✅ In-app AI agent live as a `splunkd` modular input — 21 real `layerzero:ai_report` verdicts written
+- ✅ Audit corpus indexed and SPL-queryable (1,288 chunks)
+- ✅ Anvil fork validation working — proven this session with a real, honest REJECTED on a legitimate large transfer
 - ✅ Immunefi submission template generation
-- ⏳ Waiting on SAIA tenant activation (estimated Tue May 27)
+- 🛣️ Roadmap: activate local-MLX Foundation-Sec LLM / SAIA / MCP reasoning path on top of the deterministic floor
 - ⏳ Historical scan continuing in background
 - ⏳ Demo video script + recording (last week before deadline)
 

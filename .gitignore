@@ -16,6 +16,11 @@ poc/findings/*
 !poc/findings/.gitkeep
 logs/
 
+# Foundry build artifacts under any finding workspace (never ship build junk)
+poc/findings/*/out/
+poc/findings/*/cache/
+poc/findings/*/lib/
+
 # ── private tuned artifacts (kept in private fork, not in public) ────
 # To publish privately tuned versions, branch off `private/main` instead
 agent/submission_template.py
@@ -32,6 +37,22 @@ bug-hunter/
 
 # ── deprecated custom MCP server (we use the official Splunk MCP) ───
 splunk-mcp/
+
+# ── deprecated MCP/SAIA agent path (ROADMAP, not the live loop) ──────
+# The live agent is splunk/bin/argus_agent.py (a Splunk modular input).
+# These files are kept in the private branch for reference only and must
+# NOT ship in the public repo.
+agent/mcp_agent.py
+agent/splunk_mcp_client.py
+
+# ── demo render artifacts (large; regenerated locally, never committed) ──
+# Keep architecture.png IN the repo — it is a required deliverable.
+demo/work/
+demo/shots/
+demo/voice/
+demo/argus_demo.mp4
+demo/argus_trailer.mp4
+demo/mermaid.min.js
 
 # ── runtime junk ────────────────────────────────────────────────────
 __pycache__/

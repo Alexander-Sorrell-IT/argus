@@ -24,8 +24,17 @@ ETHERSCAN_KEY = os.getenv("ETHERSCAN_API_KEY", "")
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL_SECONDS", "60"))
 LOOKBACK_BLOCKS = int(os.getenv("LOOKBACK_BLOCKS", "1000"))
 
-# Track last processed block per contract to avoid re-ingesting
-_last_block: dict[str, int] = {}
+# Rough native-asset USD price per chain — used ONLY for value_usd_est, which
+# reflects NATIVE value (ETH/MATIC/AVAX/BNB), NOT ERC-20 token amounts (see
+# bug-hunt #5/#6). None => emit no USD estimate rather than a wrong one.
+NATIVE_PRICE = {"ethereum": 2400, "arbitrum": 2400, "optimism": 2400, "base": 2400,
+                "polygon": 0.5, "avalanche": 35, "bnb": 600, "bsc": 600}
+
+# Track last processed block per (chain_id, address) — keyed by chain too so the
+# contracts that share an address across chains don't collide. Separate watermark
+# for events vs transactions (events previously re-fetched to 'latest' every poll).
+_last_block: dict = {}
+_last_event_block: dict = {}
 
 
 def fetch_transactions(contract_addr: str, explorer_api: str,
@@ -77,24 +86,27 @@ def fetch_events(contract_addr: str, explorer_api: str,
     return []
 
 
-def enrich_transaction(tx: dict, contract_name: str, chain: str) -> dict:
+def enrich_transaction(tx: dict, contract_name: str, contract_address: str, chain: str) -> dict:
     """Normalize and enrich a raw Etherscan transaction for Splunk."""
     value_eth = int(tx.get("value", "0")) / 1e18
     gas_used = int(tx.get("gasUsed", "0"))
     block_number = int(tx.get("blockNumber", "0"))
     ts = int(tx.get("timeStamp", "0"))
+    native_price = NATIVE_PRICE.get(chain)
 
     return {
         "timestamp": ts,
         "block_number": block_number,
         "chain": chain,
         "contract_name": contract_name,
-        "contract_address": tx.get("to", "").lower(),
+        # The monitored contract's own address (NOT tx.to, which is the counterparty
+        # on outbound/internal txns — that mislabeled the row's contract). See #21.
+        "contract_address": (contract_address or "").lower(),
         "tx_hash": tx.get("hash", ""),
         "from_address": tx.get("from", "").lower(),
         "to_address": tx.get("to", "").lower(),
         "value_eth": value_eth,
-        "value_usd_est": value_eth * 2400,  # rough ETH price
+        "value_usd_est": round(value_eth * native_price, 2) if native_price else None,
         "gas_used": gas_used,
         "is_error": tx.get("isError", "0") == "1",
         "method_id": tx.get("input", "0x")[:10] if tx.get("input") else "0x",
@@ -133,7 +145,8 @@ def ingest_once(hec: SplunkHEC):
     total_ev = 0
 
     for contract in scope:
-        start_block = _last_block.get(contract.address, 0)
+        wm_key = (contract.chain_id or 1, contract.address)
+        start_block = _last_block.get(wm_key, 0)
         if start_block == 0:
             # Use Alchemy RPC for reliable block tip (faster than Etherscan)
             try:
@@ -163,20 +176,23 @@ def ingest_once(hec: SplunkHEC):
                                   chain_id=contract.chain_id or 1,
                                   start_block=start_block)
         for tx in txns:
-            enriched = enrich_transaction(tx, contract.name, contract.chain)
+            enriched = enrich_transaction(tx, contract.name, contract.address, contract.chain)
             hec.send(enriched, sourcetype="layerzero:transaction")
-            max_block = max(_last_block.get(contract.address, 0),
-                            enriched["block_number"] + 1)
-            _last_block[contract.address] = max_block
+            _last_block[wm_key] = max(_last_block.get(wm_key, 0),
+                                      enriched["block_number"] + 1)
         total_tx += len(txns)
 
-        # Events
+        # Events — own watermark so they don't re-fetch from the txn watermark to
+        # 'latest' every poll (which re-sent every event each cycle, with no dedup).
+        ev_start = _last_event_block.get(wm_key, start_block)
         events = fetch_events(contract.address, contract.explorer_api,
                               chain_id=contract.chain_id or 1,
-                              start_block=start_block)
+                              start_block=ev_start)
         for ev in events:
             enriched = enrich_event(ev, contract.name, contract.chain)
             hec.send(enriched, sourcetype="layerzero:event")
+            _last_event_block[wm_key] = max(_last_event_block.get(wm_key, 0),
+                                            enriched["block_number"] + 1)
         total_ev += len(events)
 
         time.sleep(0.25)  # respect Etherscan 5 calls/sec free tier

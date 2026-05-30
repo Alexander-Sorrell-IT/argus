@@ -1,6 +1,18 @@
 <form version="1.1">
-  <label>OmniGuard — LayerZero Security Monitor</label>
-  <description>AI-powered cross-chain security monitoring for $21.95B in LayerZero protocol assets</description>
+  <label>Argus — Protocol Security Monitor</label>
+  <description>Splunk-native AI security operations for cross-chain DeFi protocols</description>
+
+  <!-- Pull protocol metadata from lookup so dashboard is protocol-agnostic.
+       Swap protocol_config.csv to monitor a different protocol. -->
+  <search>
+    <query>| inputlookup protocol_config.csv | transpose 0 header_field=key | head 1
+| rename "protocol_name" as p_name, "total_var_display" as p_var, "contracts_in_scope" as p_contracts</query>
+    <done>
+      <set token="protocol_name">$result.p_name$</set>
+      <set token="total_var_display">$result.p_var$</set>
+      <set token="contracts_in_scope">$result.p_contracts$</set>
+    </done>
+  </search>
 
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="time_range">
@@ -23,10 +35,10 @@
   <row>
     <panel>
       <single>
-        <title>Total Value at Risk (VaR)</title>
-        <search><query>| makeresults | eval var="$21.95B"</query></search>
+        <title>Protocol TVL in Scope</title>
+        <search><query>| inputlookup protocol_config.csv | search key=total_var_display | fields value</query></search>
         <option name="colorMode">block</option>
-        <option name="underLabel">Protocol TVL in Scope</option>
+        <option name="underLabel">$protocol_name$ TVL in Scope</option>
         <option name="drilldown">none</option>
       </single>
     </panel>
@@ -34,7 +46,7 @@
       <single>
         <title>Investigations (7d)</title>
         <search>
-          <query>index=omni_guard_security sourcetype=layerzero:ai_report source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123" | stats count</query>
+          <query>index=omni_guard_security sourcetype=layerzero:ai_report chain=$chain_filter$ source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123" | stats count</query>
           <earliest>-7d</earliest><latest>now</latest>
         </search>
         <option name="colorMode">block</option>
@@ -47,7 +59,7 @@
       <single>
         <title>Transactions Monitored</title>
         <search>
-          <query>index=omni_guard_security sourcetype=layerzero:transaction | stats count</query>
+          <query>index=omni_guard_security sourcetype=layerzero:transaction chain=$chain_filter$ | stats count</query>
           <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
         </search>
         <option name="underLabel">On-chain Txns Indexed</option>
@@ -57,7 +69,7 @@
       <single>
         <title>ETH Value Moved</title>
         <search>
-          <query>index=omni_guard_security sourcetype=layerzero:transaction | stats sum(value_eth) as total | eval total=round(total,2)." ETH"</query>
+          <query>index=omni_guard_security sourcetype=layerzero:transaction chain=$chain_filter$ | stats sum(value_eth) as total | eval total=round(total,2)." ETH"</query>
           <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
         </search>
         <option name="underLabel">Total ETH Across Contracts</option>
@@ -67,7 +79,7 @@
       <single>
         <title>Contracts in Scope</title>
         <search>
-          <query>index=omni_guard_security | stats dc(contract_name) as c</query>
+          <query>index=omni_guard_security chain=$chain_filter$ | stats dc(contract_name) as c</query>
           <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
         </search>
         <option name="underLabel">Unique Contracts Monitored</option>
@@ -78,10 +90,10 @@
   <!-- ═══ ROW 2: INVESTIGATION LOG (LLM via SAIA + manual entries) ═══ -->
   <row>
     <panel>
-      <title>🤖 Investigation Log — Splunk AI Assistant (SAIA)</title>
+      <title>🤖 Investigation Log — Argus in-app agent (Splunk-native triage)</title>
       <table>
         <search>
-          <query>index=omni_guard_security sourcetype=layerzero:ai_report
+          <query>index=omni_guard_security sourcetype=layerzero:ai_report chain=$chain_filter$
 source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123"
 | eval _display_time=strftime(_time,"%Y-%m-%d %H:%M")
 | table _display_time, verdict, confidence, vulnerability_class, contract_name, chain, summary, recommended_action, source_tx_hash
@@ -95,9 +107,18 @@ source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123"
         </search>
         <option name="wrap">true</option>
         <option name="rowNumbers">true</option>
+        <option name="drilldown">cell</option>
         <format type="color" field="Verdict">
           <colorPalette type="map">{"CRITICAL":"#D93F3C","HIGH":"#F58F39","MEDIUM":"#F7BC38","LOW":"#65A637","FALSE_POSITIVE":"#555555"}</colorPalette>
         </format>
+        <drilldown>
+          <condition field="Tx Hash">
+            <link target="_blank">https://etherscan.io/tx/$row.Tx Hash$</link>
+          </condition>
+          <condition>
+            <link target="_blank">search?q=search%20index%3Domni_guard_security%20source_tx_hash%3D%22$row.Tx Hash|u$%22&amp;earliest=-365d&amp;latest=now</link>
+          </condition>
+        </drilldown>
       </table>
     </panel>
   </row>
@@ -108,7 +129,7 @@ source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123"
       <title>🔴 Largest Value Transactions (top 20, all-time)</title>
       <table>
         <search>
-          <query>index=omni_guard_security sourcetype=layerzero:transaction value_eth>10 tx_hash!="0xdemo*" tx_hash!="0x123"
+          <query>index=omni_guard_security sourcetype=layerzero:transaction chain=$chain_filter$ value_eth>10 tx_hash!="0xdemo*" tx_hash!="0x123"
 | table _time, tx_hash, from_address, contract_name, chain, value_eth, value_usd_est
 | sort -value_eth | head 20
 | eval value_usd_est="$".tostring(round(value_usd_est,0))
@@ -117,13 +138,25 @@ source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123"
          value_eth as "ETH", value_usd_est as "USD Est"</query>
           <earliest>-365d</earliest><latest>now</latest>
         </search>
+        <option name="drilldown">cell</option>
+        <drilldown>
+          <condition field="Tx Hash">
+            <link target="_blank">https://etherscan.io/tx/$row.Tx Hash$</link>
+          </condition>
+          <condition field="From">
+            <link target="_blank">https://etherscan.io/address/$row.From$</link>
+          </condition>
+          <condition>
+            <link target="_blank">search?q=search%20index%3Domni_guard_security%20sourcetype%3Dlayerzero%3Atransaction%20tx_hash%3D%22$row.Tx Hash|u$%22&amp;earliest=-365d&amp;latest=now</link>
+          </condition>
+        </drilldown>
       </table>
     </panel>
     <panel>
       <title>Contract Events by Type</title>
       <chart>
         <search>
-          <query>index=omni_guard_security sourcetype=layerzero:event
+          <query>index=omni_guard_security sourcetype=layerzero:event chain=$chain_filter$
 | stats count by contract_name
 | sort -count | head 10</query>
           <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
@@ -140,7 +173,7 @@ source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123"
       <title>Transaction Volume Over Time (by Chain)</title>
       <chart>
         <search>
-          <query>index=omni_guard_security sourcetype=layerzero:transaction
+          <query>index=omni_guard_security sourcetype=layerzero:transaction chain=$chain_filter$
 | bin _time span=6h
 | stats count by _time, chain</query>
           <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
@@ -154,7 +187,7 @@ source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123"
       <title>Top Senders (Transaction Count)</title>
       <chart>
         <search>
-          <query>index=omni_guard_security sourcetype=layerzero:transaction
+          <query>index=omni_guard_security sourcetype=layerzero:transaction chain=$chain_filter$
 | stats count by from_address
 | sort -count | head 8</query>
           <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
@@ -170,7 +203,7 @@ source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123"
       <title>⚠️ Ownership / Config Change Events</title>
       <table>
         <search>
-          <query>index=omni_guard_security sourcetype=layerzero:event
+          <query>index=omni_guard_security sourcetype=layerzero:event chain=$chain_filter$
 (topic0="0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0"
  OR topic0="0x7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f")
 | table _time, contract_name, chain, topic0, topic1, topic2, tx_hash
@@ -183,14 +216,23 @@ source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123"
       <title>⚡ PoC Fork Test Queue</title>
       <table>
         <search>
-          <query>index=omni_guard_security sourcetype=layerzero:poc_trigger
+          <query>index=omni_guard_security sourcetype=layerzero:poc_trigger chain=$chain_filter$
 | table _time, vulnerability_class, chain, block_number, tx_hash, status
 | sort -_time</query>
           <earliest>-30d</earliest><latest>now</latest>
         </search>
+        <option name="drilldown">cell</option>
         <format type="color" field="status">
           <colorPalette type="map">{"PENDING":"#F7BC38","CONFIRMED":"#D93F3C","FALSE_POSITIVE":"#65A637"}</colorPalette>
         </format>
+        <drilldown>
+          <condition field="tx_hash">
+            <link target="_blank">https://etherscan.io/tx/$row.tx_hash$</link>
+          </condition>
+          <condition>
+            <link target="_blank">search?q=search%20index%3Domni_guard_security%20tx_hash%3D%22$row.tx_hash|u$%22&amp;earliest=-365d&amp;latest=now</link>
+          </condition>
+        </drilldown>
       </table>
     </panel>
   </row>

@@ -3,12 +3,15 @@
 Builds ~/Desktop/omni-guard/agent/audit_text/<category>/<pdf-name>.txt
 Resumable — skips files that already have a non-empty .txt next to them.
 """
-import sys, time
+import os, sys, time
 from pathlib import Path
 import pdfplumber
 
-SRC = Path.home() / "Desktop/omni-guard/layerzero-src/Audits/audits"
-DST = Path.home() / "Desktop/omni-guard/agent/audit_text"
+# Override via AUDIT_SRC env when monitoring a different protocol.
+SRC = Path(os.getenv("AUDIT_SRC") or
+           Path.home() / "Desktop/omni-guard/layerzero-src/Audits/audits")
+DST = Path(os.getenv("AUDIT_DST") or
+           Path.home() / "Desktop/omni-guard/agent/audit_text")
 
 def extract(pdf_path: Path, out_path: Path) -> int:
     out_path.parent.mkdir(parents=True, exist_ok=True)

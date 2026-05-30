@@ -3,6 +3,7 @@ scope_loader.py — Load and resolve in-scope LayerZero contracts from scope.jso
 """
 import json
 import os
+import sys
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional
@@ -67,8 +68,31 @@ class Contract:
         self.evm = self.chain in ETHERSCAN_API_MAP
 
 
+def _scope_data() -> dict:
+    """Return the scope.json-shaped dict to load contracts from.
+
+    If PROTOCOL=<name> is set, prefer the human-authored protocols/<name>.yaml
+    (via protocols/load_protocol.py) so swapping the YAML re-points the whole
+    pipeline. Falls back to the existing ingestion/scope.json path — and the
+    yaml/load_protocol imports stay lazy so the default path keeps working
+    with no PyYAML dependency.
+    """
+    protocol = os.getenv("PROTOCOL", "").strip()
+    if protocol:
+        protocols_dir = Path(__file__).resolve().parent.parent / "protocols"
+        if str(protocols_dir) not in sys.path:
+            sys.path.insert(0, str(protocols_dir))
+        try:
+            import load_protocol  # lazy: only when PROTOCOL is set
+            return load_protocol.emit_scope(protocol)
+        except FileNotFoundError as e:
+            # Unknown protocol name — fail loudly rather than silently scanning LZ
+            raise SystemExit(f"PROTOCOL={protocol!r} but no config found: {e}")
+    return json.loads(SCOPE_FILE.read_text())
+
+
 def load_scope() -> list[Contract]:
-    data = json.loads(SCOPE_FILE.read_text())
+    data = _scope_data()
     contracts = []
     for c in data.get("contracts", []):
         contracts.append(Contract(

@@ -35,7 +35,19 @@ CHUNK_SIZE       = int(os.getenv("HIST_CHUNK_SIZE", "10000"))
 RATE_DELAY       = float(os.getenv("HIST_RATE_DELAY", "0.22"))   # ~4.5 calls/sec
 STATE_FILE       = Path(os.getenv("HIST_STATE_FILE",
                         os.path.expanduser("~/.omni-guard-scan-state.json")))
-MAX_PAGE_RESULTS = 10_000   # Etherscan hard cap per page
+MAX_PAGE_RESULTS = 10_000   # Etherscan txlist/account hard cap per page
+GETLOGS_CAP      = 1_000    # Etherscan getLogs hard cap per page (must paginate)
+
+# Native-asset USD price per chain — value_usd_est reflects NATIVE value only
+# (ETH/MATIC/AVAX/BNB), NOT ERC-20 token amounts. None => emit no USD estimate.
+NATIVE_PRICE = {"ethereum": 2400, "arbitrum": 2400, "optimism": 2400, "base": 2400,
+                "polygon": 0.5, "avalanche": 35, "bnb": 600, "bsc": 600}
+
+# Approximate blocks/day per chain for the --days start-block estimate. Arbitrum
+# produces ~330k blocks/day; a flat 43200 under-counted L2 windows ~6-8x.
+BLOCKS_PER_DAY = {"ethereum": 7200, "arbitrum": 330000, "optimism": 43200,
+                  "polygon": 43200, "avalanche": 43200, "base": 43200,
+                  "bnb": 28800, "bsc": 28800, "fantom": 86400}
 
 
 def _load_state() -> dict:
@@ -122,22 +134,24 @@ def _fetch_page(explorer_api: str, address: str, action: str,
     return []
 
 
-def _enrich_tx(tx: dict, name: str, chain: str, tx_type: str) -> dict:
+def _enrich_tx(tx: dict, name: str, address: str, chain: str, tx_type: str) -> dict:
     value_eth = int(tx.get("value", "0")) / 1e18
     gas_used  = int(tx.get("gasUsed", "0"))
     ts_raw    = tx.get("timeStamp", "0")
     ts = int(ts_raw, 16) if str(ts_raw).startswith("0x") else int(ts_raw or 0)
+    native_price = NATIVE_PRICE.get(chain)
     return {
         "timestamp": ts,
         "block_number": int(tx.get("blockNumber", "0")),
         "chain": chain,
         "contract_name": name,
-        "contract_address": tx.get("to", "").lower(),
+        # monitored contract's own address, NOT tx.to (the counterparty). See #21.
+        "contract_address": (address or "").lower(),
         "tx_hash": tx.get("hash", ""),
         "from_address": tx.get("from", "").lower(),
         "to_address": (tx.get("to") or "").lower(),
         "value_eth": value_eth,
-        "value_usd_est": value_eth * 2400,
+        "value_usd_est": round(value_eth * native_price, 2) if native_price else None,
         "gas_used": gas_used,
         "is_error": tx.get("isError", "0") == "1",
         "method_id": (tx.get("input") or "0x")[:10],
@@ -172,12 +186,39 @@ def _enrich_event(ev: dict, name: str, chain: str) -> dict:
     }
 
 
+def _fetch_logs_paged(api, address, start_block, end_block, chain_id) -> list:
+    """Paginate getLogs by block. Etherscan caps getLogs at 1000 records/page, so
+    a single 10k-block window with >1000 logs was silently truncated. Re-issue
+    advancing fromBlock past the last returned log's block until a page is short."""
+    def _bn(p):
+        b = p.get("blockNumber", "0")
+        return int(b, 16) if str(b).startswith("0x") else int(b or 0)
+    out, frm, guard = [], start_block, 0
+    while frm <= end_block and guard < 10000:
+        guard += 1
+        page = _fetch_page(api, address, "getLogs", frm, end_block, chain_id)
+        time.sleep(RATE_DELAY)
+        if not page:
+            break
+        out.extend(page)
+        if len(page) < GETLOGS_CAP:
+            break
+        last_bn = max(_bn(p) for p in page)
+        if last_bn <= frm:
+            log.warning(f"  >{GETLOGS_CAP} logs in block {frm} for {address} — "
+                        f"rest of that block may be truncated")
+            frm = frm + 1
+        else:
+            frm = last_bn + 1
+    return out
+
+
 def scan_contract(contract, hec: SplunkHEC, state: dict,
                   start_block_override: int = None) -> int:
     """
     Scan one contract's full history. Returns total events sent.
-    Uses adaptive chunking: if a chunk returns MAX_PAGE_RESULTS we halve
-    the range and retry (avoids missing data at Etherscan's cap).
+    Uses adaptive chunking: txlist/account pages halve on the 10k cap; getLogs
+    is paginated by block (1000-record cap) via _fetch_logs_paged.
     """
     key   = f"{contract.chain}:{contract.address}"
     saved = state.get(key, {})
@@ -189,7 +230,7 @@ def scan_contract(contract, hec: SplunkHEC, state: dict,
         log.info(f"  [{contract.chain}] {contract.name} — already complete, skipping")
         return 0
     elif saved.get("last_block"):
-        start = saved["last_block"]
+        start = saved["last_block"] + 1   # +1: last_block was fully fetched (no 1-block overlap)
         log.info(f"  [{contract.chain}] {contract.name} — resuming from block {start}")
     else:
         deploy = _get_deployment_block(contract.address, contract.explorer_api, chain_id)
@@ -210,18 +251,23 @@ def scan_contract(contract, hec: SplunkHEC, state: dict,
         chunk_end = min(chunk_start + CHUNK_SIZE, current)
 
         for action in ("txlist", "txlistinternal", "getLogs"):
-            results = _fetch_page(contract.explorer_api, contract.address,
-                                  action, chunk_start, chunk_end, chain_id)
-            time.sleep(RATE_DELAY)
-
-            # If we hit the cap, halve range and retry
-            if len(results) >= MAX_PAGE_RESULTS and action != "getLogs":
-                log.debug(f"  Hit page cap at {chunk_start}-{chunk_end}, halving range")
-                mid = (chunk_start + chunk_end) // 2
+            if action == "getLogs":
+                # getLogs caps at 1000/page — paginate by block instead of relying
+                # on the (unreachable) 10k halving guard, which truncated event logs.
+                results = _fetch_logs_paged(contract.explorer_api, contract.address,
+                                            chunk_start, chunk_end, chain_id)
+            else:
                 results = _fetch_page(contract.explorer_api, contract.address,
-                                      action, chunk_start, mid, chain_id)
-                chunk_end = mid
+                                      action, chunk_start, chunk_end, chain_id)
                 time.sleep(RATE_DELAY)
+                # If we hit the account-page cap, halve the range and retry.
+                if len(results) >= MAX_PAGE_RESULTS:
+                    log.debug(f"  Hit page cap at {chunk_start}-{chunk_end}, halving range")
+                    mid = (chunk_start + chunk_end) // 2
+                    results = _fetch_page(contract.explorer_api, contract.address,
+                                          action, chunk_start, mid, chain_id)
+                    chunk_end = mid
+                    time.sleep(RATE_DELAY)
 
             for item in results:
                 if action == "getLogs":
@@ -229,7 +275,7 @@ def scan_contract(contract, hec: SplunkHEC, state: dict,
                     hec.send(enriched, sourcetype="layerzero:event")
                 else:
                     item["_tx_type"] = action
-                    enriched = _enrich_tx(item, contract.name, contract.chain, action)
+                    enriched = _enrich_tx(item, contract.name, contract.address, contract.chain, action)
                     hec.send(enriched, sourcetype="layerzero:transaction")
                 total += 1
 
@@ -286,8 +332,8 @@ def main():
                 # Compute start block from days
                 current = _get_current_block(contract)
                 time.sleep(RATE_DELAY)
-                # ~5 blocks/min on ETH, ~2 blocks/sec on Avalanche
-                blocks_per_day = 7200 if contract.chain == "ethereum" else 43200
+                # per-chain block rate; flat 43200 under-counted Arbitrum ~6-8x
+                blocks_per_day = BLOCKS_PER_DAY.get(contract.chain, 43200)
                 sb = max(0, current - (abs(start_override) * blocks_per_day))
             grand_total += scan_contract(contract, hec, state, start_block_override=sb)
 

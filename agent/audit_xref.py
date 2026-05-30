@@ -162,7 +162,13 @@ class AuditCrossReference:
         auditors = _to_list(row.get("auditors"))
         excerpts = _to_list(row.get("excerpts"))[:5]
 
-        is_known = count >= min_audit_matches
+        # Require an actual vulnerability discriminator before calling a finding
+        # "known". A bare contract-token match (e.g. the broad "OFT" synonym, which
+        # hits ~740 corpus chunks) cannot prove the issue is documented — without
+        # this gate, every unknown-class finding on a common contract was wrongly
+        # suppressed as "already audited".
+        has_vuln_filter = bool(vuln_or_clause or structured_vuln)
+        is_known = has_vuln_filter and count >= min_audit_matches
         # Confidence scales with corroborating auditors (more auditors found
         # the same kind of issue → more confidently "known").
         confidence = min(1.0, 0.5 + 0.1 * min(len(auditors), 5))
@@ -176,7 +182,10 @@ class AuditCrossReference:
             snippets=[(e[:300] if isinstance(e,str) else str(e)[:300]) for e in excerpts],
             spl_used=spl,
             reason=(f"{count} audit chunk(s) matched across {len(auditors)} auditor(s)"
-                    if is_known else f"{count} chunks matched (need {min_audit_matches})"),
+                    if is_known
+                    else (f"{count} contract chunks matched but no vulnerability discriminator — not treated as documented"
+                          if count and not has_vuln_filter
+                          else f"{count} chunks matched (need {min_audit_matches})")),
         )
 
 

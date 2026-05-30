@@ -14,11 +14,17 @@ logging.basicConfig(level=os.getenv("LOG_LEVEL","INFO"),
                     format="%(asctime)s  %(levelname)-8s  %(message)s")
 log = logging.getLogger(__name__)
 
-SRC_ROOTS = [
+# SRC_ROOTS — override via SOURCE_ROOTS env (colon-separated) when monitoring a
+# different protocol. Defaults are the LayerZero demo paths.
+_default_roots = [
     Path.home()/"Desktop/omni-guard/layerzero-src/LayerZero",
     Path.home()/"Desktop/omni-guard/layerzero-src/LayerZero-v2",
     Path.home()/"Desktop/omni-guard/layerzero-src/solidity-examples",
 ]
+SRC_ROOTS = (
+    [Path(p) for p in os.getenv("SOURCE_ROOTS", "").split(":") if p]
+    or _default_roots
+)
 # Skip patterns — test/mock/sample noise
 SKIP_RE = re.compile(r"(?i)(/test/|/tests/|/mocks?/|/sample/|/example/|\.t\.sol$|Mock\w*\.sol$|Test\w*\.sol$|Sample\w*\.sol$)")
 MAX_FILE_CHARS = 60_000   # cap per file — bigger gets chunked

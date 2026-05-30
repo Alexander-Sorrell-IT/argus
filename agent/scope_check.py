@@ -92,17 +92,29 @@ def scope_check(
     Returns ScopeResult with is_in_scope=True/False + reward tier + reasoning.
     Pure SPL-driven via the same custom MCP we already use elsewhere.
     """
-    addr = (contract_address or "").lower()
-    if not addr:
-        return ScopeResult(is_in_scope=False, reason="no contract address provided")
+    addr = (contract_address or "").lower().strip()
+    name = (contract_name or "").strip()
+    if not addr and not name:
+        return ScopeResult(is_in_scope=False, reason="no contract address or name provided")
 
-    # 1. Query indexed scope for address match
-    spl = (
-        f'index={INDEX} sourcetype=layerzero:scope kind=in_scope_contract '
-        f'address="{addr}" | head 1 | table address, name, chain, url, added'
-    )
-    rows = _run_spl(spl)
-    matched = rows[0] if rows else None
+    # 1. Match indexed scope by address (case-insensitive) if we have one, else fall
+    #    back to contract_name. Replay-family alerts carry a name but NO contract_address,
+    #    and instant-failing on missing address marked every such finding OUT_OF_SCOPE.
+    matched = None
+    if addr:
+        rows = _run_spl(
+            f'index={INDEX} sourcetype=layerzero:scope kind=in_scope_contract '
+            f'| eval _a=lower(address) | search _a="{addr}" '
+            f'| head 1 | table address, name, chain, url, added'
+        )
+        matched = rows[0] if rows else None
+    if not matched and name:
+        safe = name.replace('"', "")
+        rows = _run_spl(
+            f'index={INDEX} sourcetype=layerzero:scope kind=in_scope_contract '
+            f'name="{safe}" | head 1 | table address, name, chain, url, added'
+        )
+        matched = rows[0] if rows else None
 
     # 2. Check OOS keyword exclusions against the summary
     oos_hit = None
@@ -131,7 +143,7 @@ def scope_check(
     reason = (
         "in scope; bounty eligible" if is_in_scope
         else "OUT OF SCOPE — " + (
-            f"contract address not in scope list" if not matched
+            f"contract not in scope list (checked address + name)" if not matched
             else f"OOS keyword '{oos_hit}'" if oos_hit
             else "severity is FALSE_POSITIVE"
         )

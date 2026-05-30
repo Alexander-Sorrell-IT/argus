@@ -66,7 +66,7 @@ class FoundationSec:
 
     def triage(self, alert: dict, context: dict) -> dict:
         """Tier-1 triage. Returns structured verdict (replaces Claude path)."""
-        system = ("You are OmniGuard's tier-1 security triage. You analyze a single "
+        system = ("You are Argus's tier-1 security triage. You analyze a single "
                   "DeFi/cross-chain on-chain anomaly with supporting context and "
                   "return ONLY a JSON object with keys: verdict (CRITICAL|HIGH|MEDIUM|LOW|"
                   "FALSE_POSITIVE), confidence (0..1), vulnerability_class (snake_case), "

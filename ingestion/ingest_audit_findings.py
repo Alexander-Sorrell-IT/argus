@@ -26,7 +26,13 @@ logging.basicConfig(level=os.getenv("LOG_LEVEL","INFO"),
                     format="%(asctime)s  %(levelname)-8s  %(message)s")
 log = logging.getLogger(__name__)
 
-AUDIT_TEXT_DIR = Path.home() / "Desktop/omni-guard/agent/audit_text"
+# AUDIT_TEXT_DIR — override via AUDIT_TEXT_DIR env (e.g. set by a protocol YAML's
+# audit_path) when indexing a different protocol's audits. Defaults to the
+# LayerZero demo path so the existing run is unchanged.
+AUDIT_TEXT_DIR = Path(
+    os.getenv("AUDIT_TEXT_DIR")
+    or (Path.home() / "Desktop/omni-guard/agent/audit_text")
+).expanduser()
 CHUNK_CHARS    = 2000
 OVERLAP_CHARS  = 200
 
