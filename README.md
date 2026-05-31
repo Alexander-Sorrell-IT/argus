@@ -59,7 +59,7 @@ deterministic Splunk-native scoring, not an external LLM.
 | Enrichment | CSV lookup (`bad_addresses.csv`) |
 | State | Splunk kvstore (`contract_baselines`) — nightly rebuild |
 | AI agent (live) | `argus_agent.py` modular input running in `splunkd` (Python SDK), 5-min interval, deterministic tier-0 triage → `layerzero:ai_report` |
-| AI reasoning (roadmap) | local-MLX Foundation-Sec LLM + official MCP Server + Splunk AI Assistant (SAIA) — integrated, not the live path |
+| AI reasoning (live) | **Splunk AI Assistant (SAIA)**, Splunk's hosted LLM — reasons over findings + **writes new SPL detections** + explains queries via `/predict` (`agent/llm_enrich.py`, `agent/saia_generate_detection.py`; verified running live), on top of the tier-0 floor. (Local-MLX Foundation-Sec stays roadmap — SAIA is used instead.) |
 | Output | typed sourcetypes (`:transaction`, `:event`, `:source`, `:audit_finding`, `:scope`, `:alert`, `:ai_report`, `:fork_result`, `:poc_trigger`), persistent in Splunk's index |
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full diagram and
@@ -77,10 +77,10 @@ agent. Several Splunk apps are installed alongside it:
 - **Splunk AI Toolkit (5.7.4)** + Python for Scientific Computing — MLTK
   DBSCAN clustering used by the detections
 - **Splunk Security Essentials (3.8.3)** — security pattern library
-- **Splunk MCP Server (1.1.3)** — official MCP interface (integrated;
-  roadmap reasoning path, not the live triage loop)
-- **Splunk AI Assistant (2.0.0)** — cloud-connected LLM tier (SAIA;
-  integrated but never activated — roadmap, not live)
+- **Splunk MCP Server (1.1.3)** — official MCP interface (integrated for
+  Splunk tool calls; the in-app agent uses the SDK directly)
+- **Splunk AI Assistant (2.0.0)** — cloud-connected LLM (SAIA), **LIVE**:
+  reasons over findings and writes/explains SPL detections via `/predict`
 
 ---
 

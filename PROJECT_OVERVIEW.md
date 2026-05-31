@@ -44,7 +44,7 @@ Every layer leans on Splunk's own primitives, not external code:
 | Enrichment | `bad_addresses.csv` lookup (chainabuse + OFAC) |
 | State | Splunk kvstore (`contract_baselines` collection) — nightly rebuild via saved search |
 | AI agent (live) | `argus_agent.py` modular input running in `splunkd` via the Splunk Python SDK; 5-min interval; deterministic Splunk-native tier-0 triage (`reasoning_engine = splunk_native_tier0`); writes `layerzero:ai_report` + `layerzero:poc_trigger`, KV-deduped by finding signature |
-| AI reasoning (roadmap) | local-MLX Foundation-Sec LLM (`agent/splunk_ai.py`) + official MCP Server + Splunk AI Assistant (SAIA) — integrated but **not** the live reasoning path |
+| AI reasoning (live) | **Splunk AI Assistant (SAIA)** — Splunk's hosted LLM — in the loop: reasons over findings and downgrades false positives (`agent/llm_enrich.py`), and **writes new SPL detections** + explains queries (`agent/saia_generate_detection.py`, verified running live) via the SAIA `/predict` API, on top of the deterministic tier-0 floor. (Local-MLX Foundation-Sec in `agent/splunk_ai.py` stays roadmap — SAIA is used instead.) |
 | Output | Typed sourcetypes: `:transaction`, `:event`, `:source`, `:audit_finding`, `:scope`, `:alert`, `:ai_report`, `:fork_result`, `:poc_trigger`, `:static_finding` |
 | Notifications | macOS notify + `findings_feed.log` + Slack alert action |
 
@@ -122,8 +122,8 @@ Every layer leans on Splunk's own primitives, not external code:
 | Splunk AI Toolkit (5.7.4) | MLTK ML-SPL commands (DBSCAN clustering) |
 | Python for Scientific Computing (Apple Silicon 4.3.2) | Runtime for AI Toolkit |
 | Splunk Security Essentials (3.8.3) | Pre-built security patterns library |
-| Splunk MCP Server (1.1.3) | Official MCP interface — integrated, **roadmap** reasoning path (not the live agent) |
-| Splunk AI Assistant (2.0.0) | Cloud-connected LLM tier (SAIA) — integrated but **never activated**; roadmap, not live |
+| Splunk MCP Server (1.1.3) | Official MCP interface — integrated (`agent/splunk_mcp_client.py` speaks JSON-RPC to `/services/mcp` for Splunk tool calls); the in-app agent uses the SDK directly |
+| Splunk AI Assistant (2.0.0) | Cloud-connected LLM (SAIA) — **LIVE**: reasons over findings + writes/explains SPL detections via `/predict` (verified) |
 | Splunk AI Canvas (1.4.1) | AI workspace (roadmap) |
 | InfoSec App (1.7.1) | Security dashboards |
 | Generic LLM Connector | Optional alternative LLM path (roadmap) |
@@ -158,8 +158,9 @@ Every layer leans on Splunk's own primitives, not external code:
 | Grand Prize | 7,000 | Productizable platform; YAML-configurable for any protocol; novel fork-validation workflow |
 | Best of Security | 3,000 | Real cross-chain protocol security tool, ground-truth validation, MITRE-mappable |
 | Best AI Agent for Splunk Apps | — | **Live, scored capability.** `argus_agent.py` is an in-app modular input running inside `splunkd` via the Splunk Python SDK: it drives Splunk end-to-end (read findings → triage → write `:ai_report` → trigger fork validation), KV-deduped and idempotent. Deterministic, Splunk-native, sovereign (zero external AI) |
-| Best Use of Splunk MCP Server | 1,000 | **Roadmap, not live.** MCP Server is installed and integrated as an alternative reasoning path (`agent/mcp_agent.py`); the live triage loop does not depend on it |
-| Best Use of Splunk Hosted Models | 1,000 | **Roadmap, not live.** SAIA / hosted-model and the local-MLX Foundation-Sec LLM (`agent/splunk_ai.py`) are integrated but never activated; live verdicts come from deterministic Splunk-native scoring |
+| Best Use of Splunk MCP Server | 1,000 | Integrated — `agent/splunk_mcp_client.py` drives the official MCP Server (`/services/mcp`, encrypted token) for Splunk tool calls; the in-app agent itself uses the SDK directly |
+| Best Use of Splunk Hosted Models | 1,000 | **LIVE.** The Splunk AI Assistant (SAIA), on Splunk's hosted LLM, reasons over findings AND authors new SPL detections (`agent/saia_generate_detection.py`, verified running live), on top of the deterministic tier-0 floor |
+| Best Use of Splunk Developer Tools | 1,000 | **LIVE.** SAIA generates and explains SPL detections from plain-English threat descriptions via `/predict` — AI-assisted detection authoring (`agent/saia_generate_detection.py`) |
 | Most Valuable Feedback | 200 | Detailed feedback to Splunk team on app integration friction |
 
 ---

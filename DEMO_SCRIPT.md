@@ -37,8 +37,10 @@
 > The agentic part runs inside the Splunk app itself — a modular input on the Splunk
 > Python SDK. It triages each detection in-process and writes its verdict back as a
 > Splunk event, deduplicated in the KV store. Here it surfaced nine value-manipulation
-> candidates on Puffer pufETH and Ethena USDe. The in-app triage is deterministic and
-> Splunk-native today; a Splunk-hosted-model reasoning path is integrated and on the roadmap.
+> candidates on Puffer pufETH and Ethena USDe. The in-app triage is a fast deterministic
+> tier-0 floor; on top of it, the Splunk AI Assistant — Splunk's hosted LLM — reasons over
+> each finding (it correctly downgraded these large-but-legitimate transfers) and can even
+> write a brand-new SPL detection from the finding.
 
 ## 1:50–2:25 · Fork-validation (ground truth)
 **[Screen: terminal `validate_finding.py`; then the PoC Fork Test Queue panel]**
@@ -75,8 +77,9 @@
 >
 > The agentic part runs INSIDE the Splunk app: a modular input on the Splunk Python SDK
 > triages each detection in-process and writes its verdict back as a Splunk event,
-> KV-deduplicated. That in-app triage is deterministic and Splunk-native today; a
-> Splunk-hosted-model reasoning path is integrated and on the roadmap. Zero external AI.
+> KV-deduplicated. On top of that deterministic floor, the Splunk AI Assistant (SAIA),
+> Splunk's hosted LLM, reasons over each finding and can author a new SPL detection from it
+> — the AI builds the security logic, not just labels a row.
 >
 > High-severity candidates are fork-validated: Argus forks Ethereum mainnet with Anvil
 > at the suspicious block, runs a Foundry exploit test, and writes CONFIRMED only when
