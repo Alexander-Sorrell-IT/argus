@@ -21,7 +21,7 @@ text) followed by the 1:47 narrated walkthrough. Under the hackathon's 3-minute 
 > a SOC for smart contracts — built entirely in Splunk.
 
 **0:24 · Inside Argus**
-> SPL detections · In-app AI agent · Fork-validated on mainnet · Zero external AI
+> SPL detections · In-app AI agent · AI-written detections (Splunk AI Assistant) · Fork-validated on mainnet
 
 **0:31 · End card**
 > ARGUS
@@ -48,11 +48,13 @@ text) followed by the 1:47 narrated walkthrough. Under the hackathon's 3-minute 
 > found and disabled a rule that was flagging normal LayerZero message delivery as
 > replay attacks. A clean baseline beats crying wolf.
 
-**1:34 · In-app agent**
+**1:34 · In-app agent + AI-written detections**
 > An agent runs inside the Splunk app itself — a modular input on the Splunk Python SDK.
 > It triages each finding in-process and writes its verdict back as a Splunk event,
 > deduplicated in the KV store. Here it surfaced nine value-manipulation candidates on
-> Puffer pufETH and Ethena USDe.
+> Puffer pufETH and Ethena USDe. And the detections themselves are written by Splunk's
+> own AI: I describe a threat in plain English, and the Splunk AI Assistant writes the
+> SPL detection for it in about fifteen seconds.
 
 **1:54 · Fork validation**
 > High-severity candidates become proof-of-concept triggers. An external Anvil mainnet
@@ -61,8 +63,9 @@ text) followed by the 1:47 narrated walkthrough. Under the hackathon's 3-minute 
 > guess, never a fabricated number.
 
 **2:16 · Close**
-> Everything runs on Splunk — Splunk does the pattern work, holds the state, and runs
-> the agent, with zero external AI. Argus is what using Splunk correctly looks like.
+> Everything runs on Splunk — Splunk does the pattern work, holds the state, runs the
+> agent, and even writes its own detections with Splunk's hosted AI. No third-party model.
+> Argus is what using Splunk correctly looks like.
 > Open source, built for the Splunk Agentic Ops Hackathon.
 
 ---

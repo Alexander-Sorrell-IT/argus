@@ -29,11 +29,14 @@ it's fine to do several takes — I'll use the cleanest file you keep.
 > protocol lifecycle. We found and disabled a rule that was flagging normal
 > LayerZero message delivery as replay attacks. A clean baseline beats crying wolf.
 
-### s4 · In-app agent  (~20s)
+### s4 · In-app agent + AI-written detections  (~24s)
 > An agent runs inside the Splunk app itself — a modular input on the Splunk
 > Python SDK. It triages each finding in-process and writes its verdict back as a
 > Splunk event, deduplicated in the KV store. Here it surfaced nine
-> value-manipulation candidates on Puffer pufETH and Ethena USDe.
+> value-manipulation candidates on Puffer pufETH and Ethena USDe. And the
+> detections themselves are written by Splunk's own AI: I describe a threat in
+> plain English, and the Splunk AI Assistant writes the SPL detection for it in
+> about fifteen seconds. The AI builds the security logic; Splunk runs it.
 
 ### s5 · Fork validation  (~22s)
 > High-severity candidates become proof-of-concept triggers. An external Anvil
@@ -42,9 +45,10 @@ it's fine to do several takes — I'll use the cleanest file you keep.
 > says so. Never a guess, never a fabricated number.
 
 ### s6 · Close  (~15s)
-> Everything runs on Splunk — Splunk does the pattern work, holds the state, and
-> runs the agent, with zero external AI. Argus is what using Splunk correctly
-> looks like. Open source, built for the Splunk Agentic Ops Hackathon.
+> Everything runs on Splunk — Splunk does the pattern work, holds the state, runs
+> the agent, and even writes its own detections with Splunk's hosted AI. No
+> third-party model. Argus is what using Splunk correctly looks like. Open
+> source, built for the Splunk Agentic Ops Hackathon.
 
 ---
 Total target ≈ 1:50. Record naturally; I handle the timing.

@@ -43,7 +43,8 @@ These are excluded by `.gitignore` (verify with `git check-ignore <path>`):
 | `layerzero-src/`, `agent/audit_text/`, `models/` | Large vendored corpora — documented in README, regenerated locally |
 | `agent/submission_template.py`, `agent/foundry_gen.py` | Offensive automation — kept on the private branch |
 | `splunk/lookups/bad_addresses.csv` | Full curated list — ship a small public stub instead |
-| `agent/mcp_agent.py`, `agent/splunk_mcp_client.py` | **DEPRECATED** MCP/SAIA path — roadmap only, not the live loop (live agent is `splunk/bin/argus_agent.py`) |
+| `agent/mcp_agent.py` | **DEPRECATED** MCP-over-SSE orchestrator — not the live loop (live agent is `splunk/bin/argus_agent.py`) |
+| `agent/splunk_mcp_client.py` | **KEEP — LIVE.** This is the SAIA client (`generate_spl`/`explain_spl` via `/predict`); `agent/saia_generate_detection.py` depends on it. Do **not** exclude. |
 | `splunk-mcp/`, `bug-hunter/` | Deprecated custom MCP server / personal scratch |
 | `demo/work/`, `demo/shots/`, `demo/voice/` | Render scratch dirs |
 | `demo/argus_demo.mp4`, `demo/argus_trailer.mp4`, `demo/mermaid.min.js` | Large render artifacts (host the video externally; link in README) |
@@ -61,8 +62,12 @@ These are excluded by `.gitignore` (verify with `git check-ignore <path>`):
 4. **Defensive framing** in README/dashboards: position as a SOC for cross-chain
    protocols. Remove bug-bounty / submission-generation language. Demo wording:
    "alert the operations team."
-5. **Confirm sovereignty claim**: no external AI in the live path. The local-MLX
-   Foundation-Sec LLM and SAIA cloud path are roadmap, not the running loop.
+5. **Confirm the AI claim is precise**: the verdict path is deterministic and
+   makes zero AI calls; the only LLM in the system is Splunk's own hosted **SAIA**,
+   which authors/explains the SPL detections (live, verified). No third-party model.
+   SAIA free-form finding-*judgment* (`agent/llm_enrich.py`) is experimental
+   (deflects/times out for this tenant) and is **not** in the verdict path. The
+   local-MLX Foundation-Sec LLM stays roadmap.
 
 ## Verify exclusions before pushing
 

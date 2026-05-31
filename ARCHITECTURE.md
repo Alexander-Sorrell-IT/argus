@@ -3,14 +3,17 @@
 Splunk-native security operations platform for cross-chain DeFi protocols.
 Every analysis layer leans on Splunk primitives; external code only fills
 gaps Splunk doesn't natively cover (chain RPC ingestion, Anvil fork
-validation). **Sovereign by design: zero external AI — everything runs on
-Splunk plus local tools.**
+validation). **AI runs on Splunk's own stack: deterministic Splunk-native
+tier-0 triage produces the verdicts, and the Splunk AI Assistant (SAIA) —
+Splunk's hosted LLM — authors and explains the SPL detections themselves.**
 
 ![architecture](architecture.png)
 
 > The PNG above is rendered from the mermaid source below
-> (`demo/render_diagram.js`). It depicts the **as-built** system. Dashed,
-> greyed nodes are **roadmap — not wired into the live loop**.
+> (`demo/render_diagram.js`). It depicts the **as-built** system. The
+> purple **SAIA** node is the Splunk AI Assistant, **live** — it writes and
+> explains SPL detections (invoked on demand). Dashed, greyed nodes are
+> **roadmap — not wired into the live loop**.
 
 ## As-built data flow
 
@@ -45,6 +48,7 @@ flowchart TB
       KVS[("kvstore<br/>argus_agent_state<br/>(KV dedup)")]
     end
 
+    SAIA["SAIA — Splunk AI Assistant (hosted LLM)  ·  LIVE<br/>authors new SPL detections from plain English (~15s)<br/>and explains existing SPL — via /predict"]
     REPORT["layerzero:ai_report"]
     TRIG["layerzero:poc_trigger"]
 
@@ -55,6 +59,7 @@ flowchart TB
     AG <--> KVS
     AG --> REPORT
     AG --> TRIG
+    SAIA -.->|"drafts SPL → human-reviewed"| DET
   end
 
   subgraph FORK["External fork validation  (real, off-Splunk)"]
@@ -70,9 +75,8 @@ flowchart TB
 
   subgraph ROADMAP["Roadmap  —  NOT in the live loop"]
     direction TB
-    LLM["agent/splunk_ai.py<br/>local MLX Foundation-Sec LLM<br/>(deeper tier-1 reasoning)"]
+    LLM["agent/splunk_ai.py<br/>local MLX Foundation-Sec LLM<br/>(fully-offline reasoning option)"]
     MCP["agent/mcp_agent.py<br/>MCP-over-SSE orchestrator<br/>DEPRECATED / unused"]
-    SAIA["SAIA cloud LLM tenant<br/>never activated"]
   end
 
   ESCAN --> ING1
@@ -85,9 +89,8 @@ flowchart TB
   TRIG -->|"poc_worthwhile findings"| VAL
   FRES --> SUBMIT
 
-  AG -.->|"roadmap: deeper triage"| LLM
+  AG -.->|"roadmap: offline LLM"| LLM
   AG -.->|"deprecated path"| MCP
-  LLM -.->|"future cloud tier"| SAIA
 
   classDef detect fill:#1a4a7a,stroke:#5b9dff,color:#eaf0ff;
   classDef alertnode fill:#7a4a16,stroke:#f6a623,color:#fff4e0;
@@ -105,7 +108,8 @@ flowchart TB
   class REPORT,TRIG outnode;
   class VAL,ANVIL,FORGE,FRES forknode;
   class SUBMIT submit;
-  class LLM,MCP,SAIA roadmap;
+  class SAIA agentnode;
+  class LLM,MCP roadmap;
 ```
 
 ## The live loop (one alert, as-built)
@@ -143,12 +147,28 @@ sequenceDiagram
     end
 ```
 
-> **Roadmap (not in the live loop).** A separate LLM path exists —
-> `agent/splunk_ai.py` hosts a local **MLX Foundation-Sec** model for deeper
-> tier-1 reasoning — but it is **not wired into the live agent loop**. The old
-> `agent/mcp_agent.py` (MCP-over-SSE orchestrator) is **deprecated/unused**, and
-> the SAIA cloud LLM tenant was **never activated**. None of these run in the
-> shipped system.
+> **SAIA as the SPL-authoring brain (LIVE, verified).** The **Splunk AI
+> Assistant (SAIA)** — Splunk's own hosted LLM — **drafts brand-new SPL
+> detections** from a plain-English threat description and **explains existing
+> SPL**, via the SAIA `/predict` API (`agent/saia_generate_detection.py`;
+> verified live this session: ~15s to write a scoped z-score detection that then
+> executed and returned 306 rows). Output lands in `splunk/generated/` with a
+> "review before scheduling" header — it is **human-reviewed before** it joins
+> the live saved-search set, not auto-installed. The AI builds the security
+> logic; a person approves it. Invoked on demand, not inside the 5-minute tick.
+>
+> **What SAIA does *not* reliably do (honest note).** A separate experiment
+> (`agent/llm_enrich.py`) asks SAIA's free-form "tell me" mode to *judge* each
+> finding. For this tenant that path is unreliable — it either deflects ("how
+> does this relate to SPL?") or exceeds a 600s poll deadline; across 30 attempts
+> only 1 returned a usable verdict. So finding-level verdicts come from the
+> **deterministic Splunk-native tier-0** triage, **not** from SAIA. The enrich
+> script now writes nothing on a non-answer (no fabricated verdict).
+>
+> **Roadmap (not in the live loop).** `agent/splunk_ai.py` hosts a local **MLX
+> Foundation-Sec** model as a fully-offline reasoning option — not wired into the
+> live loop. The old `agent/mcp_agent.py` (MCP-over-SSE orchestrator) is
+> **deprecated/unused**. Neither runs in the shipped system.
 
 ## Splunk-native principles (what makes this "use Splunk correctly")
 
@@ -158,7 +178,8 @@ sequenceDiagram
 | SPL does the work, not Python | The agent only triages/orchestrates; all detection is SPL |
 | Splunk index = state store | Alerts, AI reports, poc triggers, fork results all indexed |
 | The agent lives inside Splunk | `argus_agent.py` is a modular input running in `splunkd` |
-| Triage is deterministic & sovereign | tier-0 verdict = SPL severity; zero external AI calls |
+| Verdicts are deterministic | tier-0 verdict = SPL severity; the verdict path makes zero AI calls |
+| All AI is Splunk's own | SAIA (Splunk's hosted LLM) authors the detections; no third-party model |
 | kvstore for structured state | `contract_baselines` (baselines) + `argus_agent_state` (dedup) |
 | Sourcetypes typed by intent | typed `layerzero:*` sourcetypes, `props.conf` declared |
 | Ground truth from a real fork | Anvil + Foundry; honest CONFIRMED/REJECTED, gain never faked |

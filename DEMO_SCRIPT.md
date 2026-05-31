@@ -2,9 +2,11 @@
 
 > Honest shooting script. Narration matches the **as-built** system: the live AI
 > agent is the in-app Splunk **modular input** doing **deterministic Splunk-native
-> tier-0** triage; a Splunk-hosted-model (SAIA / Foundation-Sec) LLM reasoning path
-> is **integrated and on the roadmap, not the live loop**. Record on macOS with the
-> Argus dashboard + a terminal.
+> tier-0** triage (it produces the verdicts, with zero AI calls); separately, the
+> **Splunk AI Assistant (SAIA)** — Splunk's hosted LLM — is live for **writing and
+> explaining the SPL detections themselves**. (SAIA free-form finding-judgment is
+> experimental and not in the verdict path.) Record on macOS with the Argus
+> dashboard + a terminal.
 >
 > Per-scene narration to read aloud: `demo/RECORD_THIS.md`. Captions: `demo/argus_demo.srt`.
 
@@ -23,7 +25,7 @@
 > sourcetypes — hundreds of thousands of transactions and ~900k events indexed.
 > Detection is pure SPL: per-contract z-score outliers, streamstats baselines,
 > `predict`, and MLTK clustering — no hardcoded thresholds. State lives in the Splunk
-> KV store. Zero external AI.
+> KV store. All the AI is Splunk's own — no third-party model.
 
 ## 0:45–1:15 · Detection + honest baseline
 **[Screen: dashboard — Largest Value Transactions; run a saved search]**
@@ -38,9 +40,10 @@
 > Python SDK. It triages each detection in-process and writes its verdict back as a
 > Splunk event, deduplicated in the KV store. Here it surfaced nine value-manipulation
 > candidates on Puffer pufETH and Ethena USDe. The in-app triage is a fast deterministic
-> tier-0 floor; on top of it, the Splunk AI Assistant — Splunk's hosted LLM — reasons over
-> each finding (it correctly downgraded these large-but-legitimate transfers) and can even
-> write a brand-new SPL detection from the finding.
+> tier-0 floor that produces the verdicts. And the detections themselves are written by AI:
+> the Splunk AI Assistant — Splunk's own hosted model — takes a plain-English description of
+> a threat and writes a brand-new SPL detection for it, in about fifteen seconds. The AI
+> builds the security logic; Splunk runs it.
 
 ## 1:50–2:25 · Fork-validation (ground truth)
 **[Screen: terminal `validate_finding.py`; then the PoC Fork Test Queue panel]**
@@ -52,8 +55,9 @@
 
 ## 2:25–2:45 · Close
 **[Screen: README / `architecture.png`]**
-> Everything runs on Splunk — Splunk does the pattern work, holds the state, and runs
-> the agent, with zero external AI. Argus is what using Splunk correctly looks like.
+> Everything runs on Splunk — Splunk does the pattern work, holds the state, runs the
+> agent, and even writes its own detections with Splunk's hosted AI. No third-party model.
+> Argus is what using Splunk correctly looks like.
 > Open source under AGPL-3.0, built for the Splunk Agentic Ops Hackathon.
 
 **[End card: Argus · github.com/Alexander-Sorrell-IT/argus · Splunk Agentic Ops Hackathon 2026]**
@@ -77,9 +81,10 @@
 >
 > The agentic part runs INSIDE the Splunk app: a modular input on the Splunk Python SDK
 > triages each detection in-process and writes its verdict back as a Splunk event,
-> KV-deduplicated. On top of that deterministic floor, the Splunk AI Assistant (SAIA),
-> Splunk's hosted LLM, reasons over each finding and can author a new SPL detection from it
-> — the AI builds the security logic, not just labels a row.
+> KV-deduplicated — a deterministic floor that makes zero AI calls. The AI lives one level
+> up: the Splunk AI Assistant (SAIA), Splunk's hosted LLM, takes a plain-English threat
+> description and authors a brand-new SPL detection (~15s) — the AI builds the security
+> logic, not just labels a row.
 >
 > High-severity candidates are fork-validated: Argus forks Ethereum mainnet with Anvil
 > at the suspicious block, runs a Foundry exploit test, and writes CONFIRMED only when
@@ -88,7 +93,8 @@
 > "not a bug").
 >
 > Argus is what "use Splunk correctly" looks like — Splunk does the pattern work, holds
-> the state, and runs the agent, with zero external AI.
+> the state, runs the agent, and writes its own detections with Splunk's hosted AI. No
+> third-party model.
 >
 > Built for the Splunk Agentic Ops Hackathon 2026 (Security track). Open source under
 > AGPL-3.0. LayerZero is the demo protocol; the config layer is protocol-agnostic.

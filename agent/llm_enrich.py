@@ -6,9 +6,13 @@ triage. This adds a real LLM reasoning pass using the **Splunk AI Assistant (SAI
 flow the SAIA UI uses (see agent/splunk_mcp_client.py). SAIA's verdict + rationale
 are written back as an enriched layerzero:ai_report (reasoning_engine=splunk_ai_assistant).
 
-This is the live "Splunk Hosted Models / AI Assistant" capability: SAIA reads each
-flagged anomaly and decides whether it is actually a vulnerability — correctly
-downgrading large-but-legitimate transfers that the statistical tier-0 over-flags.
+SAIA reads each flagged anomaly and judges whether it is actually a vulnerability.
+NOTE (verified 2026-05-31): this uses SAIA's free-form "tell me" mode
+(classification=2), which for the current tenant is SLOW — a single finding took
+423s and hit the poll deadline. It runs as an OFFLINE / async batch enrichment, not
+in the real-time agent tick, and on timeout it now writes NOTHING (no fabricated
+verdict). The FAST, reliably-live SAIA capability is detection authoring/explanation
+(classification=0, ~15s) — see agent/saia_generate_detection.py.
 
 Run:  python3 agent/llm_enrich.py     (needs SPLUNK_USER/PASS in env)
 """
@@ -69,9 +73,18 @@ def main():
                f"{a.get('alert_type')} on {a.get('chain')} (tier-0 severity {a.get('verdict')})")
         t = time.time()
         # classification=2 = SAIA "tell me" general-Q&A mode (won't deflect); it is slow, so poll long
-        ans = saia._saia_predict(PROMPT_TMPL.format(ctx=ctx), classification=2, poll_seconds=420)
+        ans = saia._saia_predict(PROMPT_TMPL.format(ctx=ctx), classification=2, poll_seconds=600)
+        # HONESTY GUARD: if SAIA did not return a real answer (timeout / error /
+        # no parseable SEVERITY), DO NOT fabricate a verdict. Skip the candidate
+        # so the index never carries a fake "MEDIUM" that SAIA never produced.
         sev = SEV_RE.search(ans or "")
-        verdict = (sev.group(1).upper().replace(" ", "_") if sev else "MEDIUM")
+        is_err = (not ans) or ans.lstrip().startswith('{"error"') or ans.lstrip().startswith("{'error'")
+        if is_err or not sev:
+            reason = "timeout/error" if is_err else "unparseable response"
+            print(f"  SKIP ({reason}, {time.time()-t:.0f}s) {a.get('contract_name')} "
+                  f"— no real SAIA verdict, not writing a record", flush=True)
+            continue
+        verdict = sev.group(1).upper().replace(" ", "_")
         cls = CLS_RE.search(ans or "")
         poc = POC_RE.search(ans or "")
         ev = {

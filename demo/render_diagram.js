@@ -53,6 +53,7 @@ flowchart TB
       KVS[("kvstore<br/>argus_agent_state<br/>(KV dedup)")]
     end
 
+    SAIA["SAIA — Splunk AI Assistant (hosted LLM)  ·  LIVE<br/>authors new SPL detections from plain English (~15s)<br/>and explains existing SPL — via /predict"]
     REPORT["layerzero:ai_report"]
     TRIG["layerzero:poc_trigger"]
 
@@ -63,6 +64,7 @@ flowchart TB
     AG <--> KVS
     AG --> REPORT
     AG --> TRIG
+    SAIA -.->|"drafts SPL → human-reviewed"| DET
   end
 
   %% ============== EXTERNAL FORK VALIDATION ==============
@@ -80,9 +82,8 @@ flowchart TB
   %% ============== ROADMAP / NOT IN LIVE LOOP ==============
   subgraph ROADMAP["Roadmap  —  NOT in the live loop"]
     direction TB
-    LLM["agent/splunk_ai.py<br/>local MLX Foundation-Sec LLM<br/>(deeper tier-1 reasoning)"]
+    LLM["agent/splunk_ai.py<br/>local MLX Foundation-Sec LLM<br/>(fully-offline reasoning option)"]
     MCP["agent/mcp_agent.py<br/>MCP-over-SSE orchestrator<br/>DEPRECATED / unused"]
-    SAIA["SAIA cloud LLM tenant<br/>never activated"]
   end
 
   %% ============== PRIMARY DATA FLOW ==============
@@ -97,9 +98,8 @@ flowchart TB
   FRES --> SUBMIT
 
   %% ============== ROADMAP DASHED LINKS ==============
-  AG -.->|"roadmap: deeper triage"| LLM
+  AG -.->|"roadmap: offline LLM"| LLM
   AG -.->|"deprecated path"| MCP
-  LLM -.->|"future cloud tier"| SAIA
 
   %% ============== STYLING (Splunk-ish) ==============
   classDef chain fill:#0b3d2e,stroke:#1d8a5e,color:#eafff5,stroke-width:1px;
@@ -123,7 +123,8 @@ flowchart TB
   class REPORT,TRIG outnode;
   class VAL,ANVIL,FORGE,FRES forknode;
   class SUBMIT submit;
-  class LLM,MCP,SAIA roadmap;
+  class LLM,MCP roadmap;
+  class SAIA agentnode;
 
   style CHAIN fill:#08251b,stroke:#1d8a5e,color:#9affcf;
   style INGEST fill:#0c2540,stroke:#2f7fd1,color:#bcd9ff;

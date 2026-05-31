@@ -30,14 +30,17 @@ SCENES = [
      "An A I agent runs inside the Splunk app itself, as a modular input on the Python S D K. "
      "It triages each finding in-process and writes its verdict back as a Splunk event, "
      "deduplicated in the K V store. Here it surfaced nine value-manipulation candidates "
-     "on Puffer pufETH and Ethena USDe, each with a recommended action."),
+     "on Puffer pufETH and Ethena USDe. And the detections themselves are written by Splunk's own A I: "
+     "I describe a threat in plain English, and the Splunk A I Assistant writes the S P L detection "
+     "for it in about fifteen seconds. The A I builds the security logic; Splunk runs it."),
     ("05_row.png",
      "High-severity candidates become proof-of-concept triggers. An external Anvil mainnet fork "
      "runs a Foundry exploit test, and Argus marks a finding confirmed only when the test's own "
      "assertions reproduce the exploit. Never on a guess, and never with a fabricated number."),
     ("99_end.png",
-     "Everything runs on Splunk. Splunk does the pattern work, holds the state, and runs the agent, "
-     "with zero external A I. Argus is what using Splunk correctly looks like. "
+     "Everything runs on Splunk. Splunk does the pattern work, holds the state, runs the agent, "
+     "and even writes its own detections with Splunk's hosted A I. No third-party model. "
+     "Argus is what using Splunk correctly looks like. "
      "Open source, protocol-agnostic, built for the Splunk Agentic Ops Hackathon."),
 ]
 
