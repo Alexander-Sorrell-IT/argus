@@ -159,12 +159,11 @@ class ForkValidator:
             # Require genuine pass evidence. `forge test` exits 0 even on "No tests
             # found", so returncode is NOT sufficient — that produced false CONFIRMEDs.
             # Parse the summary: need >=1 passed and 0 failed; else look for [PASS]/[FAIL].
-            ran = re.search(r"(\d+)\s+passed[,;]\s*(\d+)\s+failed", out)
-            if ran:
-                npass, nfail = int(ran.group(1)), int(ran.group(2))
-                passed = (npass >= 1 and nfail == 0)
-            else:
-                passed = ("[PASS]" in out) and ("[FAIL]" not in out) and ("No tests" not in out)
+            # Require pass evidence across the WHOLE run. A per-suite "N passed; 0
+            # failed" line can hide failures in OTHER suites (e.g. leaked lib tests),
+            # so demand a [PASS] with NO [FAIL anywhere and no "N failing tests" summary.
+            no_fail = ("[FAIL" not in out) and not re.search(r"[1-9]\d*\s+failing tests", out)
+            passed = ("[PASS]" in out) and no_fail and ("No tests" not in out)
             return passed, out[-4000:]
         except subprocess.TimeoutExpired:
             return False, "forge test timed out after 180s"

@@ -60,3 +60,9 @@ __pycache__/
 .DS_Store
 *.swp
 splunk-mcp/.git/
+
+# combined cut (host externally)
+demo/argus_full.mp4
+poc/capability-selftest/lib/
+poc/capability-selftest/out/
+poc/capability-selftest/cache/
