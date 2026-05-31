@@ -91,8 +91,9 @@ Every layer leans on Splunk's own primitives, not external code:
      confidence, recommended action (deterministic Splunk-native tier-0)
    • Writes layerzero:ai_report + layerzero:poc_trigger; KV-deduped so a
      re-firing alert never floods or re-works
-   • No external model in the loop (reasoning_engine = splunk_native_tier0).
-     Foundation-Sec LLM / MCP / SAIA are integrated but roadmap, not live.
+   • Fast deterministic floor (reasoning_engine = splunk_native_tier0); on top
+     of it the Splunk AI Assistant (SAIA) reasons over findings and writes new
+     SPL detections — LIVE. (Local-MLX Foundation-Sec stays roadmap.)
                               │
                               ▼
    FORK VALIDATION (Anvil mainnet fork + Foundry test)
@@ -184,7 +185,8 @@ Hackathon deadline is **Jun 15, 2026**. Dev license is valid for **6 months**, s
 - ✅ Audit corpus indexed and SPL-queryable (1,288 chunks)
 - ✅ Anvil fork validation working — proven this session with a real, honest REJECTED on a legitimate large transfer
 - ✅ Immunefi submission template generation
-- 🛣️ Roadmap: activate local-MLX Foundation-Sec LLM / SAIA / MCP reasoning path on top of the deterministic floor
+- ✅ Splunk AI Assistant (SAIA) LIVE in the loop — reasons over findings (downgrades false positives) and writes new SPL detections from plain English (verified running live)
+- 🛣️ Roadmap: local-MLX Foundation-Sec for fully-offline reasoning; richer MCP-driven agent orchestration
 - ⏳ Historical scan continuing in background
 - ⏳ Demo video script + recording (last week before deadline)
 
