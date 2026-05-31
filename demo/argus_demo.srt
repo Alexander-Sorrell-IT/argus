@@ -1,88 +1,99 @@
 1
-00:00:00,000 --> 00:00:04,904
-Smart contracts run for years, and there is no tail -f for a live protocol.
+00:00:00,000 --> 00:00:05,034
+Smart contracts run for years, and there's no tail -f for a live protocol.
 
 2
-00:00:04,904 --> 00:00:11,115
-When something breaks, you usually hear about it on Telegram, an hour after the funds are gone.
+00:00:05,034 --> 00:00:10,953
+When something breaks, you hear about it on Telegram, an hour after the funds are gone.
 
 3
-00:00:11,115 --> 00:00:15,953
+00:00:10,953 --> 00:00:15,988
 Argus turns Splunk into a security operations center for cross-chain DeFi.
 
 4
-00:00:15,953 --> 00:00:19,362
+00:00:15,988 --> 00:00:19,790
 This is Argus monitoring LayerZero, live in Splunk.
 
 5
-00:00:19,362 --> 00:00:25,980
-Every on-chain transaction, event, source file, and audit report becomes a typed Splunk sourcetype.
+00:00:19,790 --> 00:00:26,501
+Every transaction, event, source file, and audit report becomes a typed Splunk sourcetype.
 
 6
-00:00:25,980 --> 00:00:31,462
-Millions of transactions indexed across fifteen in-scope contracts on five chains.
+00:00:26,501 --> 00:00:31,496
+Millions of transactions indexed across fifteen in-scope contracts.
 
 7
-00:00:31,462 --> 00:00:32,856
-Detection is pure SPL.
+00:00:31,496 --> 00:00:37,410
+Detection is pure SPL: per-contract z-score outliers, no hardcoded thresholds.
 
 8
-00:00:32,856 --> 00:00:39,384
-Per-contract z-score outliers on transfer value and decoded token amount, with no hardcoded thresholds.
+00:00:37,410 --> 00:00:40,594
+The contract teaches Splunk what's normal.
 
 9
-00:00:39,384 --> 00:00:42,109
-The contract teaches Splunk what is normal.
-
-10
-00:00:42,109 --> 00:00:47,306
+00:00:40,594 --> 00:00:46,811
 And Argus is honest: it separates real anomalies from ordinary protocol lifecycle.
 
-11
-00:00:47,306 --> 00:00:53,580
-We found and disabled a rule that was flagging normal LayerZero message delivery as replay attacks.
+10
+00:00:46,811 --> 00:00:53,180
+We disabled a rule that flagged normal LayerZero message delivery as replay attacks.
 
-12
-00:00:53,580 --> 00:00:55,799
+11
+00:00:53,180 --> 00:00:55,834
 A clean baseline beats crying wolf.
 
+12
+00:00:55,834 --> 00:01:01,322
+An AI agent runs inside the Splunk app itself, a modular input on the Python SDK.
+
 13
-00:00:55,799 --> 00:01:00,923
-An AI agent runs inside the Splunk app itself, as a modular input on the Python SDK.
+00:01:01,322 --> 00:01:06,810
+It triages each finding in-process and writes its verdict back as a Splunk event.
 
 14
-00:01:00,923 --> 00:01:07,694
-It triages each finding in-process and writes its verdict back as a Splunk event, deduplicated in the KV store.
+00:01:06,810 --> 00:01:12,569
+Here it surfaced nine value-manipulation candidates on Puffer pufETH and Ethena USDe.
 
 15
-00:01:07,694 --> 00:01:14,831
-Here it surfaced nine value-manipulation candidates on Puffer pufETH and Ethena USDe, each with a recommended action.
+00:01:12,569 --> 00:01:16,702
+And the detections themselves are written by Splunk's own AI:
 
 16
-00:01:14,831 --> 00:01:18,397
-High-severity candidates become proof-of-concept triggers.
+00:01:16,702 --> 00:01:22,868
+I describe a threat in plain English, and the Splunk AI Assistant writes the SPL detection,
 
 17
-00:01:18,397 --> 00:01:27,868
-An external Anvil mainnet fork runs a Foundry exploit test, and Argus marks a finding confirmed only when the test's own assertions reproduce the exploit.
+00:01:22,868 --> 00:01:27,950
+in about fifteen seconds. The AI builds the security logic; Splunk runs it.
 
 18
-00:01:27,868 --> 00:01:31,127
-Never on a guess, and never with a fabricated number.
+00:01:27,950 --> 00:01:31,530
+High-severity candidates become proof-of-concept triggers.
 
 19
-00:01:31,127 --> 00:01:32,881
-Everything runs on Splunk.
+00:01:31,530 --> 00:01:35,172
+An external Anvil mainnet fork runs a Foundry exploit test,
 
 20
-00:01:32,881 --> 00:01:38,887
-Splunk does the pattern work, holds the state, and runs the agent, with zero external AI.
+00:01:35,172 --> 00:01:40,975
+and Argus marks a finding confirmed only when the test's own assertions reproduce the exploit.
 
 21
-00:01:38,887 --> 00:01:42,126
-Argus is what using Splunk correctly looks like.
+00:01:40,975 --> 00:01:44,246
+Never on a guess, and never with a fabricated number.
 
 22
-00:01:42,126 --> 00:01:47,187
-Open source, protocol-agnostic, built for the Splunk Agentic Ops Hackathon.
+00:01:44,246 --> 00:01:50,496
+Everything runs on Splunk: Splunk does the pattern work, holds the state, runs the agent,
 
+23
+00:01:50,496 --> 00:01:56,184
+and even writes its own detections with Splunk's hosted AI. No third-party model.
+
+24
+00:01:56,184 --> 00:01:59,555
+Argus is what using Splunk correctly looks like.
+
+25
+00:01:59,555 --> 00:02:03,487
+Open source, built for the Splunk Agentic Ops Hackathon.
