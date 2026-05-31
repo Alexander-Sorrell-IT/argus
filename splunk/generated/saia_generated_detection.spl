@@ -1,0 +1,9 @@
+# Detection AUTHORED BY the Splunk AI Assistant (SAIA) from a plain-English
+# threat description, via Argus. Review before scheduling.
+# Prompt: Write a Splunk SPL detection over index=omni_guard_security sourcetype=layerzero:transaction that flags, per contract_name, any value_eth more than 4 standard deviations above that contract's own mean. Use eventstats to build the per-contract baseline (mean and stdev), compute a z-score, keep only rows with z-score > 4, and output _time, tx_hash, contract_name, chain, value_eth and the z-score.
+
+index=omni_guard_security sourcetype=layerzero:transaction
+| eventstats avg(value_eth) as mean_val stdev(value_eth) as stdev_val by contract_name
+| eval z_score=if(stdev_val>0, (value_eth - mean_val) / stdev_val, null())
+| where z_score > 4
+| fields _time tx_hash contract_name chain value_eth z_score
