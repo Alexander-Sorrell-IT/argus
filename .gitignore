@@ -73,3 +73,6 @@ demo/trailer/raw/
 .argus_readiness_workflow.js
 .argus_fix_workflow.js
 SUBMISSION_READINESS.md
+
+# No demo videos in the repo — they are uploaded to YouTube/Vimeo, not shipped
+demo/*.mp4
