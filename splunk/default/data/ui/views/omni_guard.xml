@@ -17,7 +17,7 @@
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="time_range">
       <label>Time Range</label>
-      <default><earliest>-7d</earliest><latest>now</latest></default>
+      <default><earliest>-30d</earliest><latest>now</latest></default>
     </input>
     <input type="dropdown" token="chain_filter">
       <label>Chain</label>
@@ -44,10 +44,10 @@
     </panel>
     <panel>
       <single>
-        <title>Investigations (7d)</title>
+        <title>Investigations (30d)</title>
         <search>
           <query>index=omni_guard_security sourcetype=layerzero:ai_report chain=$chain_filter$ source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123" | stats count</query>
-          <earliest>-7d</earliest><latest>now</latest>
+          <earliest>-30d</earliest><latest>now</latest>
         </search>
         <option name="colorMode">block</option>
         <option name="rangeColors">["0x65A637","0xF7BC38","0xF58F39","0xD93F3C"]</option>
@@ -77,12 +77,12 @@
     </panel>
     <panel>
       <single>
-        <title>Contracts in Scope</title>
+        <title>Contracts Monitored</title>
         <search>
           <query>index=omni_guard_security chain=$chain_filter$ | stats dc(contract_name) as c</query>
           <earliest>$time_range.earliest$</earliest><latest>$time_range.latest$</latest>
         </search>
-        <option name="underLabel">Unique Contracts Monitored</option>
+        <option name="underLabel">Unique contracts with on-chain activity</option>
       </single>
     </panel>
   </row>
@@ -103,7 +103,7 @@ source_tx_hash!="0xdemo*" AND source_tx_hash!="0x123"
          vulnerability_class as "Vuln Class", contract_name as "Contract",
          chain as "Chain", summary as "Summary", recommended_action as "Action",
          source_tx_hash as "Tx Hash"</query>
-          <earliest>-7d</earliest><latest>now</latest>
+          <earliest>-30d</earliest><latest>now</latest>
         </search>
         <option name="wrap">true</option>
         <option name="rowNumbers">true</option>

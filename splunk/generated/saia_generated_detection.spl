@@ -1,6 +1,12 @@
 # Detection AUTHORED BY the Splunk AI Assistant (SAIA) from a plain-English
 # threat description, via Argus. Review before scheduling.
 # Prompt: Alert when a single LayerZero endpoint sends more than 5x its 7-day average message volume in one hour
+#
+# NOTE: captured VERBATIM as SAIA emitted it, to show the AI's authoring honestly.
+# SAIA chose a generic schema; to run against Argus's live data, map the sourcetype
+# `layerzero_events` -> `layerzero:event` and the `endpoint` field -> the indexed
+# field (e.g. `contract_name`). The detection LOGIC (5x the 7-day hourly baseline)
+# is unchanged by that mapping.
 
 index=* sourcetype=layerzero_events endpoint=* earliest=-7d@d latest=now
 | bin _time span=1h

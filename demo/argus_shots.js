@@ -7,7 +7,7 @@ const BASE = 'http://localhost:8000';
 const USER = process.env.SPLUNK_USER;
 const PASS = process.env.SPLUNK_PASS;
 const OUT = '/Users/broodierchip-m1air/Desktop/omni-guard/demo/shots';
-const DASH = `${BASE}/en-US/app/omni_guard/omni_guard?form.time_range.earliest=-120d&form.time_range.latest=now&form.chain_filter=*`;
+const DASH = `${BASE}/en-US/app/omni_guard/omni_guard?form.time_range.earliest=-3650d&form.time_range.latest=now&form.chain_filter=*`;
 
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
