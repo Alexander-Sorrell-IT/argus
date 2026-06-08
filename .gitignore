@@ -40,10 +40,11 @@ splunk-mcp/
 
 # ── deprecated MCP/SAIA agent path (ROADMAP, not the live loop) ──────
 # The live agent is splunk/bin/argus_agent.py (a Splunk modular input).
-# These files are kept in the private branch for reference only and must
+# mcp_agent.py is kept in the private branch for reference only and must
 # NOT ship in the public repo.
 agent/mcp_agent.py
-agent/splunk_mcp_client.py
+# splunk_mcp_client.py SHIPS (live SAIA client; saia_generate_detection.py
+# depends on it) — intentionally NOT ignored.
 
 # ── demo render artifacts (large; regenerated locally, never committed) ──
 # Keep architecture.png IN the repo — it is a required deliverable.
@@ -67,3 +68,8 @@ poc/capability-selftest/lib/
 poc/capability-selftest/out/
 poc/capability-selftest/cache/
 demo/trailer/raw/
+
+# Internal orchestration scratch + readiness report — never ship
+.argus_readiness_workflow.js
+.argus_fix_workflow.js
+SUBMISSION_READINESS.md

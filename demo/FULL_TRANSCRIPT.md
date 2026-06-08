@@ -39,11 +39,11 @@ text) followed by the 1:47 narrated walkthrough. Under the hackathon's 3-minute 
 **0:53 · What it is**
 > This is Argus monitoring LayerZero, live in Splunk. Every on-chain transaction,
 > event, source file, and audit report becomes a typed Splunk sourcetype — hundreds of
-> thousands of transactions and ~900k events indexed across fifteen in-scope contracts.
+> thousands of transactions and ~900k events indexed across the in-scope contracts, overwhelmingly on Ethereum.
 
 **1:09 · Detection + honesty**
 > Detection is pure SPL — per-contract z-score outliers on transfer value and decoded
-> token amount, no hardcoded thresholds; the contract teaches Splunk what's normal. And
+> token amount, with data-driven baselines and conservative fixed floors; the contract teaches Splunk what's normal. And
 > Argus is honest: it separates real anomalies from ordinary protocol lifecycle. We
 > found and disabled a rule that was flagging normal LayerZero message delivery as
 > replay attacks. A clean baseline beats crying wolf.
@@ -51,8 +51,8 @@ text) followed by the 1:47 narrated walkthrough. Under the hackathon's 3-minute 
 **1:34 · In-app agent + AI-written detections**
 > An agent runs inside the Splunk app itself — a modular input on the Splunk Python SDK.
 > It triages each finding in-process and writes its verdict back as a Splunk event,
-> deduplicated in the KV store. Here it surfaced nine value-manipulation candidates on
-> Puffer pufETH and Ethena USDe. And the detections themselves are written by Splunk's
+> deduplicated in the KV store. Here it surfaced nine value-manipulation candidates,
+> led by Puffer pufETH. And the detections themselves are written by Splunk's
 > own AI: I describe a threat in plain English, and the Splunk AI Assistant writes the
 > SPL detection for it in about fifteen seconds.
 
@@ -64,7 +64,9 @@ text) followed by the 1:47 narrated walkthrough. Under the hackathon's 3-minute 
 
 **2:16 · Close**
 > Everything runs on Splunk — Splunk does the pattern work, holds the state, runs the
-> agent, and even writes its own detections with Splunk's hosted AI. No third-party model.
+> agent, and even writes its own detections with Splunk's hosted AI. SAIA authors the
+> detections; verdicts are deterministic Splunk-native logic (an experimental local-model
+> tier stays tagged in the index but off the verdict path).
 > Argus is what using Splunk correctly looks like.
 > Open source, built for the Splunk Agentic Ops Hackathon.
 

@@ -63,18 +63,20 @@ These are excluded by `.gitignore` (verify with `git check-ignore <path>`):
    protocols. Remove bug-bounty / submission-generation language. Demo wording:
    "alert the operations team."
 5. **Confirm the AI claim is precise**: the verdict path is deterministic and
-   makes zero AI calls; the only LLM in the system is Splunk's own hosted **SAIA**,
-   which authors/explains the SPL detections (live, verified). No third-party model.
-   SAIA free-form finding-*judgment* (`agent/llm_enrich.py`) is experimental
-   (deflects/times out for this tenant) and is **not** in the verdict path. The
-   local-MLX Foundation-Sec LLM stays roadmap.
+   makes zero AI calls; the only LLM in the production loop is Splunk's own hosted
+   **SAIA**, which authors/explains the SPL detections (live, verified). No
+   third-party model sits in the verdict path. SAIA free-form finding-*judgment*
+   (`agent/llm_enrich.py`) is experimental (deflects/times out for this tenant) and
+   is **not** in the verdict path. An experimental local-MLX tier (Qwen2.5 /
+   Foundation-Sec) stays roadmap — its rows remain tagged in the `ai_report` index
+   (`reasoning_engine`) but it is never the production verdict.
 
 ## Verify exclusions before pushing
 
 ```bash
 # After 'git add -A', list everything staged for the public repo and confirm
 # none of the private paths are present (.env.example is intentionally kept):
-git ls-files --cached | grep -E '^(\.env$|\.env\.[^/]+$|logs/|poc/findings/|layerzero-src/|models/|agent/(mcp_agent|splunk_mcp_client|foundry_gen|submission_template)\.py|demo/(work|shots|voice)/|demo/.*\.mp4|demo/mermaid\.min\.js)' \
+git ls-files --cached | grep -E '^(\.env$|\.env\.[^/]+$|logs/|poc/findings/|layerzero-src/|models/|agent/(mcp_agent|foundry_gen|submission_template)\.py|demo/(work|shots|voice)/|demo/.*\.mp4|demo/mermaid\.min\.js)' \
   | grep -v '^\.env\.example$'
 # ^ this must print NOTHING. If it prints a path, it is about to ship — stop.
 
@@ -96,12 +98,13 @@ gone. Use `gh`:
 ```bash
 cd /Users/broodierchip-m1air/Desktop/omni-guard
 
-# 0. Untrack the deprecated MCP/SAIA files. They are gitignored, but git keeps
+# 0. Untrack the deprecated MCP orchestrator. It is gitignored, but git keeps
 #    tracking files that were committed before the ignore rule existed. This
-#    removes them from the index (files stay on disk) so they do not ship.
-#    The leak-grep in "Verify exclusions" above flags them while still tracked;
-#    that is your reminder to run this step.
-git rm --cached agent/mcp_agent.py agent/splunk_mcp_client.py
+#    removes it from the index (the file stays on disk) so it does not ship.
+#    The leak-grep in "Verify exclusions" above flags it while still tracked;
+#    that is your reminder to run this step. (splunk_mcp_client.py SHIPS — it is
+#    the live SAIA client; do NOT untrack it.)
+git rm --cached agent/mcp_agent.py
 
 # 1. Stage everything and sanity-check (re-run the leak-grep from "Verify").
 git add -A

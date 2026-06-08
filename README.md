@@ -13,9 +13,10 @@ filtering, an in-app AI agent that triages every novel candidate, and
 ground-truth exploit validation against a local mainnet fork — all using
 Splunk's native primitives. The AI agent runs *inside* Splunk as a
 modular input; its triage is deterministic and Splunk-native, so the
-verdict path makes zero AI calls. The only LLM in the system is Splunk's
-own hosted **SAIA**, which authors the SPL detections — no third-party
-model anywhere.
+verdict path makes zero AI calls. The LLM in the production loop is
+Splunk's own hosted **SAIA**, which authors the SPL detections; a local
+experimental tier (MLX Qwen2.5 / Foundation-Sec) remains tagged in the
+index (`reasoning_engine`) but is not the production verdict path.
 
 LayerZero is the demo protocol. The architecture is protocol-agnostic.
 
@@ -39,7 +40,8 @@ after $50M is gone. Argus closes that gap:
   structured verdict, assigns a vulnerability class, and decides whether
   it's worth a proof-of-concept. The triage is deterministic and
   Splunk-native (verdict driven by SPL severity; `reasoning_engine =
-  splunk_native_tier0`) — no external model in the loop.
+  splunk_native_tier0`) — no external model in the production verdict
+  path (a local MLX Qwen2.5 / Foundation-Sec tier was experimental only).
 - **Anvil mainnet fork** validates the exploit hypothesis locally —
   ground truth, no hallucination at the final step. Results are honest
   CONFIRMED / REJECTED (gain is reported null, never fabricated).
@@ -55,14 +57,14 @@ deterministic Splunk-native scoring, not an external LLM.
 
 | Layer | Splunk primitive |
 |---|---|
-| Detection | `eventstats` (z-score), `streamstats`, `predict`, `cluster`, MLTK DBSCAN — ~14 SPL detections |
+| Detection | `eventstats` (z-score), `streamstats`, `predict`, `cluster`, MLTK DBSCAN — 12 SPL detections |
 | Filtering | SPL JOIN against indexed audit corpus (`layerzero:audit_finding`) |
 | Source analysis | SPL pattern matching against indexed Solidity (`layerzero:source`) |
 | Enrichment | CSV lookup (`bad_addresses.csv`) |
 | State | Splunk kvstore (`contract_baselines`) — nightly rebuild |
 | AI agent (live) | `argus_agent.py` modular input running in `splunkd` (Python SDK), 5-min interval, deterministic tier-0 triage → `layerzero:ai_report` |
 | AI detection authoring (live) | **Splunk AI Assistant (SAIA)**, Splunk's hosted LLM — **writes new SPL detections** from plain English + explains existing SPL via `/predict` (`agent/saia_generate_detection.py`; verified live, ~15s). Invoked on demand. (SAIA free-form finding-*judgment* via `agent/llm_enrich.py` is experimental — deflects/times out for this tenant, so it is **not** in the verdict path. Local-MLX Foundation-Sec stays roadmap.) |
-| Output | typed sourcetypes (`:transaction`, `:event`, `:source`, `:audit_finding`, `:scope`, `:alert`, `:ai_report`, `:fork_result`, `:poc_trigger`), persistent in Splunk's index |
+| Output | 10 typed sourcetypes (`:transaction`, `:event`, `:source`, `:audit_finding`, `:scope`, `:alert`, `:ai_report`, `:fork_result`, `:poc_trigger`, `:static_finding`), persistent in Splunk's index |
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full diagram and
 sequence flow.

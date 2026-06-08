@@ -1,9 +1,13 @@
 # Detection AUTHORED BY the Splunk AI Assistant (SAIA) from a plain-English
 # threat description, via Argus. Review before scheduling.
-# Prompt: Write a Splunk SPL detection over index=omni_guard_security sourcetype=layerzero:transaction that flags, per contract_name, any value_eth more than 4 standard deviations above that contract's own mean. Use eventstats to build the per-contract baseline (mean and stdev), compute a z-score, keep only rows with z-score > 4, and output _time, tx_hash, contract_name, chain, value_eth and the z-score.
+# Prompt: Alert when a single LayerZero endpoint sends more than 5x its 7-day average message volume in one hour
 
-index=omni_guard_security sourcetype=layerzero:transaction
-| eventstats avg(value_eth) as mean_val stdev(value_eth) as stddev_val by contract_name
-| eval zscore=if(stddev_val>0, (value_eth-mean_val)/stddev_val, null())
-| where zscore>4
-| table _time tx_hash contract_name chain value_eth zscore
+index=* sourcetype=layerzero_events endpoint=* earliest=-7d@d latest=now
+| bin _time span=1h
+| stats count as hour_count by endpoint _time
+| eventstats sum(hour_count) as total_7d by endpoint
+| eval avg_hourly = total_7d/(7*24)
+| where hour_count > 5*avg_hourly
+| rename endpoint as LayerZero_Endpoint, hour_count as message_volume, avg_hourly as avg_message_volume
+| eval severity_level = 4
+| fields _time LayerZero_Endpoint message_volume avg_message_volume severity_level

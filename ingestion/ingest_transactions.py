@@ -202,7 +202,7 @@ def ingest_once(hec: SplunkHEC):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="OmniGuard LayerZero ingestion")
+    parser = argparse.ArgumentParser(description="Argus LayerZero ingestion")
     parser.add_argument("--once", action="store_true",
                         help="Run once then exit (default: continuous poll)")
     args = parser.parse_args()

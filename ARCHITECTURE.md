@@ -3,9 +3,12 @@
 Splunk-native security operations platform for cross-chain DeFi protocols.
 Every analysis layer leans on Splunk primitives; external code only fills
 gaps Splunk doesn't natively cover (chain RPC ingestion, Anvil fork
-validation). **AI runs on Splunk's own stack: deterministic Splunk-native
-tier-0 triage produces the verdicts, and the Splunk AI Assistant (SAIA) —
-Splunk's hosted LLM — authors and explains the SPL detections themselves.**
+validation). **The production AI runs on Splunk's own stack: deterministic
+Splunk-native tier-0 triage produces the verdicts, and the Splunk AI Assistant
+(SAIA) — Splunk's hosted LLM — authors and explains the SPL detections
+themselves. (An experimental local MLX Qwen2.5 reasoning tier was trialed; its
+outputs remain tagged in the index by `reasoning_engine` but are not the
+production verdict path.)**
 
 ![architecture](architecture.png)
 
@@ -38,7 +41,7 @@ flowchart TB
   subgraph SPLUNK["Splunk Enterprise  —  the brain"]
     direction TB
     ST["Typed sourcetypes (index: omni_guard_security)<br/>layerzero:transaction · :event · :source<br/>:audit_finding · :scope"]
-    DET["SPL detections  (~14 saved searches)<br/>eventstats z-score · streamstats · predict<br/>cluster · transaction · MLTK DBSCAN"]
+    DET["SPL detections  (12 saved searches)<br/>eventstats z-score · streamstats · predict<br/>cluster · transaction · MLTK DBSCAN"]
     KVB[("kvstore<br/>contract_baselines")]
     ALERT["layerzero:alert<br/>(written via | collect)"]
 
@@ -174,12 +177,12 @@ sequenceDiagram
 
 | Principle | How Argus implements it |
 |---|---|
-| Detection is data-driven, not threshold-driven | `eventstats avg/stdev by contract` → z-score → flag |
+| Detection is data-driven, baselines auto-tune | `eventstats avg/stdev by contract` → z-score → flag, with conservative fixed floors (e.g. value_eth>0.1, zscore>3, fails_10m>5) to suppress dust/noise |
 | SPL does the work, not Python | The agent only triages/orchestrates; all detection is SPL |
 | Splunk index = state store | Alerts, AI reports, poc triggers, fork results all indexed |
 | The agent lives inside Splunk | `argus_agent.py` is a modular input running in `splunkd` |
 | Verdicts are deterministic | tier-0 verdict = SPL severity; the verdict path makes zero AI calls |
-| All AI is Splunk's own | SAIA (Splunk's hosted LLM) authors the detections; no third-party model |
+| Production AI is Splunk's own | SAIA (Splunk's hosted LLM) authors the detections; the local MLX Qwen2.5 reasoning tier was experimental — its outputs stay tagged in the index by `reasoning_engine`, but it is not the production verdict path |
 | kvstore for structured state | `contract_baselines` (baselines) + `argus_agent_state` (dedup) |
 | Sourcetypes typed by intent | typed `layerzero:*` sourcetypes, `props.conf` declared |
 | Ground truth from a real fork | Anvil + Foundry; honest CONFIRMED/REJECTED, gain never faked |

@@ -8,18 +8,19 @@
 > filters out already-documented findings against a local audit corpus,
 > triages each novel candidate with an in-app AI agent (a Splunk modular
 > input running deterministic, Splunk-native tier-0 scoring), and validates
-> exploits locally against an Anvil mainnet fork. All AI is Splunk's own —
-> deterministic SPL for the verdicts, and Splunk's hosted **SAIA** model to
-> author the detections — with no third-party LLM anywhere.
+> exploits locally against an Anvil mainnet fork. The production AI path is
+> Splunk's own — deterministic SPL for the verdicts, and Splunk's hosted
+> **SAIA** model to author the detections. (An experimental local-MLX tier
+> sits off the verdict path; see roadmap.)
 
 ---
 
 ## What this is
 
 A reproducible bug-finding pipeline that uses **only Splunk-native primitives**
-for analysis — the verdicts are deterministic SPL, and the only LLM in the
-system is Splunk's own hosted **SAIA** (used to author detections), never a
-third-party model. Drop a YAML pointing at a
+for analysis — the verdicts are deterministic SPL, and the production LLM in the
+system is Splunk's own hosted **SAIA** (used to author detections). An
+experimental local-MLX tier sits off the verdict path (see roadmap). Drop a YAML pointing at a
 protocol → the pipeline ingests its on-chain history, indexes its source code
 and audit reports, runs statistical detections, cross-references findings
 against existing audits, and ends in a fork-validated exploit attempt.
@@ -37,11 +38,11 @@ Compound, Uniswap, EigenLayer, etc.).
 
 ## Splunk-native architecture
 
-Every layer leans on Splunk's own primitives, not external code:
+Every layer leans on Splunk's own primitives:
 
 | Layer | Splunk primitive used |
 |---|---|
-| Detection | SPL `eventstats` (z-score per contract), `streamstats`, `predict`, `cluster`, MLTK DBSCAN — ~14 SPL detections |
+| Detection | SPL `eventstats` (z-score per contract), `streamstats`, `predict`, `cluster`, MLTK DBSCAN — 12 SPL detections |
 | Filtering | SPL JOIN against `layerzero:audit_finding` index (1,288 audit chunks) |
 | Source code analysis | `layerzero:source` indexed (197 Solidity files), SPL pattern matching |
 | Enrichment | `bad_addresses.csv` lookup (chainabuse + OFAC) |
@@ -65,7 +66,7 @@ Every layer leans on Splunk's own primitives, not external code:
    Immunefi rules             ─── scope contracts + impact tiers + bounty caps
                               │
                               ▼
-   DETECTION (~14 SPL detections, cron 5m–6h)
+   DETECTION (12 SPL detections, cron 5m–6h)
    ─────────────────────────────────────────
    1. Value Outlier (z-score per contract, kvstore baseline)
    2. Sender Behavior Outlier
@@ -151,7 +152,7 @@ Every layer leans on Splunk's own primitives, not external code:
 | `layerzero:poc_trigger` | growing | Fork-validation triggers emitted by the agent |
 | `layerzero:fork_result` | growing | Anvil PoC validation results (honest CONFIRMED/REJECTED) |
 | `bad_addresses.csv` lookup | 10 | Known-malicious sender list |
-| `contract_baselines` kvstore | growing | Per-contract statistical baselines (15 contracts monitored) |
+| `contract_baselines` kvstore | growing | Per-contract statistical baselines (13 contracts monitored) |
 
 ---
 
@@ -183,7 +184,7 @@ Hackathon deadline is **Jun 15, 2026**. Dev license is valid for **6 months**, s
 ## Status
 
 - ✅ Pipeline plumbing complete end-to-end
-- ✅ All Splunk-native principles satisfied (verdict path makes zero AI calls; the only LLM is Splunk's own hosted SAIA, used to author detections — no third-party model)
+- ✅ All Splunk-native principles satisfied (verdict path makes zero AI calls; the production LLM is Splunk's own hosted SAIA, used to author detections — the local-MLX tier is experimental and off the verdict path)
 - ✅ In-app AI agent live as a `splunkd` modular input — 21 real `layerzero:ai_report` verdicts written
 - ✅ Audit corpus indexed and SPL-queryable (1,288 chunks)
 - ✅ Anvil fork validation working — proven this session with a real, honest REJECTED on a legitimate large transfer

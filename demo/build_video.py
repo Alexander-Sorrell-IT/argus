@@ -19,18 +19,18 @@ SCENES = [
     ("01_dashboard_full.png",
      "This is Argus monitoring LayerZero, live in Splunk. Every on-chain transaction, event, "
      "source file, and audit report becomes a typed Splunk sourcetype. "
-     "Millions of transactions indexed across fifteen in-scope contracts on five chains."),
+     "Hundreds of thousands of transactions indexed across in-scope contracts, overwhelmingly on Ethereum."),
     ("02_kpis.png",
      "Detection is pure S P L. Per-contract z-score outliers on transfer value and decoded token amount, "
-     "with no hardcoded thresholds. The contract teaches Splunk what is normal. "
+     "with data-driven baselines plus conservative fixed floors to suppress dust and noise. The contract teaches Splunk what is normal. "
      "And Argus is honest: it separates real anomalies from ordinary protocol lifecycle. "
      "We found and disabled a rule that was flagging normal LayerZero message delivery as replay attacks. "
      "A clean baseline beats crying wolf."),
     ("03_row.png",
      "An A I agent runs inside the Splunk app itself, as a modular input on the Python S D K. "
      "It triages each finding in-process and writes its verdict back as a Splunk event, "
-     "deduplicated in the K V store. Here it surfaced nine value-manipulation candidates "
-     "on Puffer pufETH and Ethena USDe. And the detections themselves are written by Splunk's own A I: "
+     "deduplicated in the K V store. Here it surfaced nine value-manipulation candidates, "
+     "led by Puffer pufETH. And the detections themselves are written by Splunk's own A I: "
      "I describe a threat in plain English, and the Splunk A I Assistant writes the S P L detection "
      "for it in about fifteen seconds. The A I builds the security logic; Splunk runs it."),
     ("05_row.png",
@@ -39,7 +39,9 @@ SCENES = [
      "assertions reproduce the exploit. Never on a guess, and never with a fabricated number."),
     ("99_end.png",
      "Everything runs on Splunk. Splunk does the pattern work, holds the state, runs the agent, "
-     "and even writes its own detections with Splunk's hosted A I. No third-party model. "
+     "and even writes its own detections with Splunk's hosted A I. The detections are authored by the "
+     "Splunk A I Assistant, and the triage verdicts come from deterministic Splunk-native logic with zero "
+     "A I calls; a local experimental model tier stays tagged in the index, but is never the production verdict. "
      "Argus is what using Splunk correctly looks like. "
      "Open source, protocol-agnostic, built for the Splunk Agentic Ops Hackathon."),
 ]

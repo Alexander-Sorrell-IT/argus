@@ -26,7 +26,7 @@ const END = base(`
   <p class=eye style="font-size:90px">ARGUS</p>
   <ul>
     <li>Splunk-native: SPL detections, KV-store state, in-app AI agent</li>
-    <li>AI-written detections: Splunk's hosted AI Assistant authors the SPL &mdash; no third-party model</li>
+    <li>AI-written detections: Splunk's hosted SAIA authors the SPL; verdicts are deterministic Splunk-native logic</li>
     <li>Ground-truth: fork-validated, honest verdicts &mdash; no crying wolf</li>
   </ul>
   <p class=small>Open source (AGPL-3.0) · protocol-agnostic via one YAML</p>`);

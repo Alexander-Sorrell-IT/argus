@@ -296,7 +296,7 @@ def scan_contract(contract, hec: SplunkHEC, state: dict,
 
 
 def main():
-    parser = argparse.ArgumentParser(description="OmniGuard full historical scan")
+    parser = argparse.ArgumentParser(description="Argus full historical scan")
     parser.add_argument("--chain",  help="Scan only this chain (ethereum/avalanche/...)")
     parser.add_argument("--days",   type=int, help="Limit to last N days of history")
     parser.add_argument("--reset",  action="store_true", help="Clear state and restart")

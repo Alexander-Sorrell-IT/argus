@@ -20,11 +20,11 @@ it's fine to do several takes — I'll use the cleanest file you keep.
 ### s2 · What it is  (~16s)
 > This is Argus monitoring LayerZero, live in Splunk. Every on-chain transaction,
 > event, source file, and audit report becomes a typed Splunk sourcetype —
-> millions of transactions indexed across fifteen in-scope contracts.
+> hundreds of thousands of transactions indexed across the in-scope contracts, overwhelmingly on Ethereum.
 
 ### s3 · Detection + honesty  (~25s)
 > Detection is pure SPL. Per-contract z-score outliers on transfer value and
-> decoded token amount — no hardcoded thresholds; the contract teaches Splunk
+> decoded token amount — data-driven baselines with conservative fixed floors; the contract teaches Splunk
 > what's normal. And Argus is honest: it separates real anomalies from ordinary
 > protocol lifecycle. We found and disabled a rule that was flagging normal
 > LayerZero message delivery as replay attacks. A clean baseline beats crying wolf.
@@ -33,7 +33,7 @@ it's fine to do several takes — I'll use the cleanest file you keep.
 > An agent runs inside the Splunk app itself — a modular input on the Splunk
 > Python SDK. It triages each finding in-process and writes its verdict back as a
 > Splunk event, deduplicated in the KV store. Here it surfaced nine
-> value-manipulation candidates on Puffer pufETH and Ethena USDe. And the
+> value-manipulation candidates, led by Puffer pufETH. And the
 > detections themselves are written by Splunk's own AI: I describe a threat in
 > plain English, and the Splunk AI Assistant writes the SPL detection for it in
 > about fifteen seconds. The AI builds the security logic; Splunk runs it.

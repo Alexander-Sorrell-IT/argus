@@ -24,8 +24,9 @@
 > transactions, events, contract source, and audit reports into typed Splunk
 > sourcetypes — hundreds of thousands of transactions and ~900k events indexed.
 > Detection is pure SPL: per-contract z-score outliers, streamstats baselines,
-> `predict`, and MLTK clustering — no hardcoded thresholds. State lives in the Splunk
-> KV store. All the AI is Splunk's own — no third-party model.
+> `predict`, and MLTK clustering — data-driven baselines with conservative fixed floors
+> to suppress dust and noise. State lives in the Splunk KV store. Detections are authored by
+> SAIA (Splunk's hosted model); verdicts come from a deterministic Splunk-native tier-0.
 
 ## 0:45–1:15 · Detection + honest baseline
 **[Screen: dashboard — Largest Value Transactions; run a saved search]**
@@ -39,7 +40,7 @@
 > The agentic part runs inside the Splunk app itself — a modular input on the Splunk
 > Python SDK. It triages each detection in-process and writes its verdict back as a
 > Splunk event, deduplicated in the KV store. Here it surfaced nine value-manipulation
-> candidates on Puffer pufETH and Ethena USDe. The in-app triage is a fast deterministic
+> candidates, led by Puffer pufETH. The in-app triage is a fast deterministic
 > tier-0 floor that produces the verdicts. And the detections themselves are written by AI:
 > the Splunk AI Assistant — Splunk's own hosted model — takes a plain-English description of
 > a threat and writes a brand-new SPL detection for it, in about fifteen seconds. The AI
@@ -56,7 +57,9 @@
 ## 2:25–2:45 · Close
 **[Screen: README / `architecture.png`]**
 > Everything runs on Splunk — Splunk does the pattern work, holds the state, runs the
-> agent, and even writes its own detections with Splunk's hosted AI. No third-party model.
+> agent, and even writes its own detections with Splunk's hosted AI. SAIA authors the
+> detections; verdicts are deterministic Splunk-native logic (an experimental local-model
+> tier stays tagged in the index but off the verdict path).
 > Argus is what using Splunk correctly looks like.
 > Open source under AGPL-3.0, built for the Splunk Agentic Ops Hackathon.
 

@@ -14,7 +14,7 @@ if ! command -v anvil &>/dev/null; then
 fi
 
 echo "============================================="
-echo "  OmniGuard — Local Mainnet Fork"
+echo "  Argus — Local Mainnet Fork"
 echo "  RPC: http://127.0.0.1:${FORK_PORT}"
 echo "  Block: ${BLOCK_NUMBER}"
 echo "  Chain: Ethereum mainnet"
