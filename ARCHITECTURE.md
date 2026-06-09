@@ -10,6 +10,12 @@ themselves. (An experimental local MLX Qwen2.5 reasoning tier was trialed; its
 outputs remain tagged in the index by `reasoning_engine` but are not the
 production verdict path.)**
 
+**Naming.** *Argus* is the product; *`omni_guard`* is its Splunk-native **engine**
+(the app and the roads it runs on). Everything below — the `omni_guard_security`
+index, the SPL detections, the KV store, the in-app agent, and the `| forkvalidate`
+command — is the `omni_guard` app, with `TA-triage-v1` as the ingest/triage add-on.
+The two names are intentional layers, not a rename in progress.
+
 ![architecture](architecture.png)
 
 > The PNG above is rendered from the mermaid source below

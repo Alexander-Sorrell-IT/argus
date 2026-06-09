@@ -18,6 +18,16 @@ Splunk's own hosted **SAIA**, which authors the SPL detections; a local
 experimental tier (MLX Qwen2.5 / Foundation-Sec) remains tagged in the
 index (`reasoning_engine`) but is not the production verdict path.
 
+### Naming: Argus vs. `omni_guard`
+**Argus is the product; `omni_guard` is its Splunk-native engine** — the app and
+the roads it runs on. The engine is a Splunk app whose id is `omni_guard`: the
+`omni_guard_security` index (the data plane), the SPL detections, the KV-store
+state, the in-app modular-input agent, and the `| forkvalidate` custom search
+command — with the `TA-triage-v1` add-on handling ingest/triage. So every
+`omni_guard` you see in SPL and config **is** Argus's engine under the hood. The
+two names are intentional layers — product on top, Splunk engine underneath —
+not a half-finished rename.
+
 LayerZero is the demo protocol. The architecture is protocol-agnostic.
 
 ---

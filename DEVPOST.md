@@ -75,6 +75,10 @@ consumes. LayerZero is the demo protocol; an example Aave config ships alongside
 prove the layer is real.
 
 ## How I built it
+- **Naming:** *Argus* is the product; its Splunk-native **engine** is the `omni_guard`
+  app — the `omni_guard_security` index, the SPL detections, the KV-store state, the
+  in-app agent, and the `| forkvalidate` command — with the `TA-triage-v1` add-on for
+  ingest/triage. (Argus = the app; `omni_guard` = the engine it runs on.)
 - **Splunk Enterprise 10.4** with a Developer License as the entire runtime.
 - **Detection** entirely in SPL across 12 saved searches on cron schedules, writing
   results with `collect`; state in KV store collections (e.g. `contract_baselines`),

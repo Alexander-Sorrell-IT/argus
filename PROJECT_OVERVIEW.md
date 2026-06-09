@@ -12,6 +12,12 @@
 > Splunk's own — deterministic SPL for the verdicts, and Splunk's hosted
 > **SAIA** model to author the detections. (An experimental local-MLX tier
 > sits off the verdict path; see roadmap.)
+>
+> **Naming:** *Argus* is the product; *`omni_guard`* is its Splunk-native engine
+> (the `omni_guard_security` index, SPL detections, KV state, the in-app agent,
+> and the `| forkvalidate` command), with `TA-triage-v1` as the ingest/triage
+> add-on. Argus = the app; `omni_guard` = the engine it runs on — intentional
+> layers, not a half-finished rename.
 
 ---
 
