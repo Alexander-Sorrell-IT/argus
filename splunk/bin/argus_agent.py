@@ -53,6 +53,58 @@ VULN_CLASS = {
 
 SEVERITY_RANK = {"FALSE_POSITIVE": 0, "LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
 
+# ── Auto-router: close the loop in-process (detect → triage → poc_trigger →
+# fork-validate → verdict) with NO human running the validator. OFF by default so the
+# stock agent behaviour is unchanged; enable with ARGUS_AUTO_VALIDATE=1.
+AUTO_VALIDATE = os.getenv("ARGUS_AUTO_VALIDATE", "0") == "1"
+SYS_PYTHON = os.getenv("ARGUS_SYS_PYTHON", "/usr/local/bin/python3")
+
+def _argus_repo():
+    for c in (os.getenv("ARGUS_HOME"), os.path.expanduser("~/argus"),
+              os.path.expanduser("~/Desktop/omni-guard"), os.getcwd()):
+        if c and os.path.exists(os.path.join(c, "poc", "validate_finding.py")):
+            return c
+    return os.getenv("ARGUS_HOME") or ""
+
+def _match_exploit_test(repo, tx_hash):
+    """Best-effort: find a known exploit test (.t.sol) whose finding matches this tx
+    (poc/findings/*/context.json mentioning the tx). Returns the Exploit.t.sol path or
+    None. None → the validator records a trace and returns INCONCLUSIVE, the honest
+    outcome when no exploit hypothesis exists for a candidate."""
+    import glob
+    tx = (tx_hash or "").lower()
+    if not tx:
+        return None
+    for ctx in glob.glob(os.path.join(repo, "poc", "findings", "*", "context.json")):
+        try:
+            if tx in open(ctx).read().lower():
+                t = os.path.join(os.path.dirname(ctx), "Exploit.t.sol")
+                if os.path.exists(t):
+                    return t
+        except Exception:
+            continue
+    return None
+
+def _ensure_runnable(proj_dir, repo):
+    """Make an exploit dir runnable: ensure foundry.toml + lib/forge-std so `forge test`
+    compiles the .t.sol (the findings/ evidence copy ships without build deps)."""
+    ft = os.path.join(proj_dir, "foundry.toml")
+    if not os.path.exists(ft):
+        try:
+            with open(ft, "w") as f:
+                f.write('[profile.default]\nsrc="."\ntest="."\nout="out"\nlibs=["lib"]\n')
+        except Exception:
+            pass
+    libstd = os.path.join(proj_dir, "lib", "forge-std")
+    if not os.path.exists(libstd):
+        src = os.path.join(repo, "layerzero-src", "LayerZero-v2", "lib", "forge-std")
+        if os.path.exists(src):
+            try:
+                os.makedirs(os.path.join(proj_dir, "lib"), exist_ok=True)
+                os.symlink(src, libstd)
+            except Exception:
+                pass
+
 
 # ── helpers ──────────────────────────────────────────────────────────────────────
 def oneshot(service, spl, earliest="-24h", latest="now", count=0):
@@ -194,6 +246,46 @@ def triage(service, alert):
     }
 
 
+def auto_validate(service, trig, log=None, write=True):
+    """Run fork-validation IN-PROCESS for a poc_trigger and (optionally) write the verdict
+    back as layerzero:fork_result — closing the detect→prove loop with no human step. The
+    agent (in splunkd) orchestrates the host EVM tooling via the system interpreter; the
+    verdict is DETERMINISTIC (no AI). A matched exploit test yields CONFIRMED/REJECTED;
+    otherwise the validator records a trace (INCONCLUSIVE)."""
+    log = log or (lambda m: None)
+    repo = _argus_repo()
+    validator = os.path.join(repo, "poc", "validate_finding.py")
+    if not repo or not os.path.exists(validator):
+        log("  auto-validate skipped: Argus repo not found (set ARGUS_HOME)")
+        return None
+    tx = trig.get("tx_hash"); blk = trig.get("block_number"); chain = trig.get("chain", "ethereum")
+    cmd = [SYS_PYTHON, validator, "--tx-hash", str(tx), "--chain", str(chain), "--no-splunk"]
+    if blk:
+        try:
+            cmd += ["--fork-block", str(int(blk) - 1)]
+        except Exception:
+            pass
+    test = _match_exploit_test(repo, tx)
+    if test:
+        _ensure_runnable(os.path.dirname(test), repo)
+        cmd += ["--foundry-test", test]
+    log(f"  auto-validate → forking {chain} @ {str(tx)[:18]}…"
+        f"{' (exploit test matched)' if test else ' (trace only)'}")
+    try:
+        import subprocess
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=300, cwd=repo)
+        out = r.stdout or ""
+        data = json.loads(out[out.index("{"):]) if "{" in out else {"status": "ERROR", "reason": "no JSON from validator"}
+    except Exception as e:
+        data = {"status": "ERROR", "reason": f"auto-validate error: {e}"}
+    data.setdefault("timestamp", int(time.time()))
+    data["auto_routed"] = True
+    if write and service is not None:
+        write_event(service, data, "layerzero:fork_result")
+    log(f"  auto-validate verdict → {data.get('status')}")
+    return data.get("status")
+
+
 def run_cycle(service, lookback="-6h", log=None, write=True):
     """One agentic cycle. Returns (#findings triaged, list of verdict summaries)."""
     log = log or (lambda m: None)
@@ -239,6 +331,13 @@ def run_cycle(service, lookback="-6h", log=None, write=True):
                     "vulnerability_class": v["vulnerability_class"],
                     "chain": alert.get("chain", "ethereum"), "status": "PENDING",
                 }, "layerzero:poc_trigger")
+                if AUTO_VALIDATE:
+                    # Close the loop in one motion: fork-validate this candidate now.
+                    auto_validate(service, {
+                        "tx_hash": v["poc_tx_hash"],
+                        "block_number": v["poc_block_number"],
+                        "chain": alert.get("chain", "ethereum"),
+                    }, log=log)
             # Record idempotent state so this finding is never re-processed.
             state.data.batch_save({
                 "_key": sig, "signature": sig, "primary_tx": v["poc_tx_hash"],
@@ -285,6 +384,23 @@ class ArgusAgent(Script):
 
 
 if __name__ == "__main__":
+    # Prove the auto-router in-process (no human, no SPL):
+    #   splunk cmd python3 argus_agent.py --validate-tx <hash> --block <attack_block> [--write]
+    if "--validate-tx" in sys.argv:
+        a = sys.argv
+        tx = a[a.index("--validate-tx") + 1]
+        blk = int(a[a.index("--block") + 1]) if "--block" in a else None
+        svc = None
+        if "--write" in a:
+            svc = client.connect(host=os.getenv("SPLUNK_HOST", "localhost"),
+                                 port=int(os.getenv("SPLUNK_PORT", "8089")),
+                                 username=os.getenv("SPLUNK_USER", "admin"),
+                                 password=os.getenv("SPLUNK_PASS", ""), scheme="https")
+        status = auto_validate(svc, {"tx_hash": tx, "block_number": blk, "chain": "ethereum"},
+                               log=lambda m: print(f"[argus] {m}"), write=("--write" in a))
+        print(f"[argus] auto-router verdict: {status}")
+        sys.exit(0)
+
     # Standalone harness:  splunk cmd python3 argus_agent.py --test [--dry-run]
     if "--test" in sys.argv:
         svc = client.connect(
