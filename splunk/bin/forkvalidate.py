@@ -35,9 +35,26 @@ class ForkValidateCommand(GeneratingCommand):
     # host tool, which is exactly the integration boundary.
     SYS_PYTHON = os.environ.get("ARGUS_SYS_PYTHON", "/usr/local/bin/python3")
 
+    def _resolve_repo(self):
+        """Locate the Argus checkout holding poc/validate_finding.py — portable,
+        no hardcoded user path as source of truth. Order: repo= option, $ARGUS_HOME,
+        then common locations, then cwd."""
+        for c in (self.repo, os.environ.get("ARGUS_HOME"),
+                  os.path.expanduser("~/argus"),
+                  os.path.expanduser("~/Desktop/omni-guard"),
+                  os.getcwd()):
+            if c and os.path.exists(os.path.join(c, "poc", "validate_finding.py")):
+                return c
+        return self.repo or os.environ.get("ARGUS_HOME") or ""
+
     def generate(self):
-        repo = self.repo or os.environ.get("ARGUS_HOME") or "/Users/broodierchip-m1air/Desktop/omni-guard"
+        repo = self._resolve_repo()
         validator = os.path.join(repo, "poc", "validate_finding.py")
+        if not repo or not os.path.exists(validator):
+            yield {"_time": time.time(), "status": "ERROR",
+                   "reason": 'Argus repo not found — set ARGUS_HOME (or pass repo="...") to the '
+                             'checkout containing poc/validate_finding.py.'}
+            return
 
         cmd = [self.SYS_PYTHON, validator, "--tx-hash", self.tx_hash,
                "--chain", self.chain, "--no-splunk"]
