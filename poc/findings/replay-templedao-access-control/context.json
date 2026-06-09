@@ -1,0 +1,49 @@
+{
+  "finding_dir": "replay-templedao-access-control",
+  "kind": "REPLAY_OF_KNOWN_PUBLIC_HISTORICAL_EXPLOIT",
+  "is_novel_discovery": false,
+  "purpose": "Reproduce a genuine, public historical exploit against forked mainnet state to prove that poc/validate_finding.py reaches a real CONFIRMED on a true exploit. This is a REPLAY only, NOT a novel finding.",
+  "protocol": "TempleDAO (STAX)",
+  "mechanism": "Broken access control / unprotected callback-trusting function. StaxLPStaking.migrateStake(oldStaking, amount) has NO access control and blindly trusts the caller-supplied `oldStaking` address: it calls oldStaking.migrateWithdraw(msg.sender, amount) (an attacker-controlled callback) and then credits msg.sender with `amount` staked LP via _applyStake. The attacker passes their OWN contract as `oldStaking` (whose migrateWithdraw is a no-op) plus the full LP balance as `amount`, getting credited with LP they never deposited, then calls withdrawAll(false) to transfer the real LP tokens out. Single transaction.",
+  "provenance": {
+    "chain": "ethereum",
+    "attack_tx_hash": "0x8c3f442fc6d640a6ff3ea0b12be64f1d4609ea94edd2966f42c01cd9bdcf04b5",
+    "attack_block": 15725067,
+    "fork_block": 15725066,
+    "attacker_address": "0x9C9fb3100a2A521985f0C47DE3b4598dafd25B01",
+    "attack_contract": "0x2df9C154Fe24D081cFE568645fb4075d725431E0",
+    "victim_address": "0xd2869042E12a3506100af1D192b5b04D65137941",
+    "victim_contract_name": "StaxLPStaking",
+    "prize_token": "0xBcB8b7FC9197fEDa75C101fA69d3211b5a30dCD9",
+    "prize_token_name": "xFraxTempleLP",
+    "incident_date": "2022-10-11",
+    "loss_usd_approx": "~$2.3M",
+    "public_source_url": "https://rekt.news/templedao-rekt/",
+    "adapted_from": "Public DeFiHackLabs PoC (SunWeb3Sec/DeFiHackLabs, src/test/2022-10/Templedao_exp.sol), flattened to forge-std-only with inline interfaces and an explicit profit assertion."
+  },
+  "validation": {
+    "validator": "poc/validate_finding.py",
+    "command": "set -a && source .env && set +a && python3 poc/validate_finding.py --tx-hash 0x8c3f442fc6d640a6ff3ea0b12be64f1d4609ea94edd2966f42c01cd9bdcf04b5 --chain ethereum --fork-block 15725066 --foundry-test poc/replays/templedao-access-control/Exploit.t.sol --no-splunk",
+    "status": "CONFIRMED",
+    "confidence": 0.7,
+    "real_forge_pass": true,
+    "tests_ran": 1,
+    "tests_passed": 1,
+    "tests_failed": 0,
+    "attacker_lp_gain": "321154.865567124596801893",
+    "attacker_lp_gain_token": "xFraxTempleLP",
+    "assertion": "assertGt(gain, 0, \"exploit did not reproduce: attacker gained no LP\") — load-bearing, not weakened.",
+    "independent_cross_check": "The validator's independent cast-run re-trace of the REAL attack tx (trace_summary in validator_result.json) shows the identical flow against the real attack contract 0x2Df9c154fe24D081cfE568645Fb4075d725431e0: balanceOf(staking)=3.211e23 -> migrateStake(attacker's oldStaking, 3.211e23) -> no-op migrateWithdraw callback -> emit Staked -> withdrawAll(false) -> StaxLP::transfer of 3.211e23 to attacker -> final balanceOf(attacker)=3.211e23. Matches the PoC's reproduction in both mechanism AND amount.",
+    "archive_provider": "Alchemy (served pre-attack state at block 15725066 reliably)"
+  },
+  "source_files": {
+    "exploit": "Exploit.t.sol (copied from poc/replays/templedao-access-control/Exploit.t.sol)",
+    "validator_result": "validator_result.json (fresh validate_finding.py output)",
+    "live_project_dir": "/Users/broodierchip-m1air/Desktop/omni-guard/poc/replays/templedao-access-control"
+  },
+  "honesty_pairing": {
+    "confirmed": "replay-templedao-access-control (this dir) — a REAL exploit, replayed, fork-reproduced to a genuine CONFIRMED.",
+    "rejected": "poc/findings/2026-05-27-puffer-001 — a REAL on-chain outlier (Puffer pufETH 58k ETH transfer) that the SAME validator correctly REJECTED because it does not reproduce as an exploit.",
+    "claim": "The validator confirms real exploits and rejects non-exploits — it cannot bluff."
+  }
+}

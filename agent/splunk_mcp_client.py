@@ -220,11 +220,68 @@ class SplunkMCPClient:
         return json.dumps({"error": "timeout waiting for SAIA response",
                            "job_id": job_id, "chat_id": chat_id})
 
-    def generate_spl(self, prompt: str, spl_only: bool = True) -> str:
-        """Generate SPL via SAIA. Uses /predict with classification=0 (write)
-        which is the same path as ask_splunk_question — SAIA classifies the
-        intent server-side."""
-        return self.ask_splunk_question(f"Generate SPL for this: {prompt}")
+    # The REAL Argus index schema — fed to SAIA so it writes SPL that binds to
+    # live data instead of inventing sourcetype/field names. Verified against the
+    # live index (omni_guard_security): 10 populated layerzero:* sourcetypes.
+    ARGUS_SCHEMA = {
+        "index": "omni_guard_security",
+        "sourcetypes": {
+            "layerzero:transaction": ["contract_name", "contract_address", "chain", "value_eth",
+                                       "value_usd_est", "gas_used", "is_error", "failed_tx", "high_gas",
+                                       "large_value", "method_id", "tx_type", "tx_hash", "from_address",
+                                       "to_address", "block_number", "timestamp"],
+            "layerzero:event":       ["contract_name", "contract_address", "chain", "tx_hash", "topic0",
+                                       "topic1", "topic2", "data", "log_index", "event_type", "block_number"],
+            "layerzero:alert":       ["severity", "alert_type", "chain", "tx_hashes", "search_name",
+                                       "time_span_secs", "description"],
+            "layerzero:ai_report":   ["verdict", "confidence", "vulnerability_class", "contract_name",
+                                       "chain", "summary", "reasoning_engine", "source_tx_hash"],
+        },
+        "notes": "Sourcetypes use a COLON (sourcetype=\"layerzero:transaction\"). Chains seen: "
+                 "ethereum, polygon, avalanche. Fields are JSON in _raw, KV_MODE=auto.",
+    }
+
+    def generate_spl(self, prompt: str, spl_only: bool = True, schema_aware: bool = True) -> str:
+        """Generate SPL via SAIA (classification=0, the live write path). When
+        schema_aware, the REAL Argus schema is supplied to SAIA as additional_context
+        AND in-prompt, then a deterministic post-processor binds sourcetype/field
+        names to the live index — so the output runs against real data, not a
+        hallucinated schema. SAIA drafts the logic; the post-processor binds it."""
+        if not schema_aware:
+            return self.ask_splunk_question(f"Generate SPL for this: {prompt}")
+
+        sc = self.ARGUS_SCHEMA
+        schema_text = "\n".join(
+            f'  sourcetype="{st}": {", ".join(fields)}' for st, fields in sc["sourcetypes"].items()
+        )
+        enriched = (
+            "Write a single Splunk SPL detection for the Argus app. Use ONLY this real schema "
+            f"(index={sc['index']}); do not invent sourcetypes or fields:\n{schema_text}\n"
+            f"{sc['notes']}\nAlways begin with index={sc['index']} and a colon-form sourcetype. "
+            f"Threat to detect: {prompt}\nReturn only the SPL."
+        )
+        draft = self.ask_splunk_question(enriched, context=sc)
+        return self._bind_to_schema(draft)
+
+    def _bind_to_schema(self, spl: str) -> str:
+        """Deterministically rewrite the common SAIA schema-drift back to the live
+        index: underscore sourcetypes -> colon form, known plurals -> singular, and
+        ensure the index is set. This is a binder, NOT a generator — it never invents
+        detection logic, it only repairs names so SAIA's draft actually runs."""
+        import re
+        s = spl
+        # layerzero_events / layerzero_transactions / layerzero_xxx -> layerzero:xxx
+        s = re.sub(r'sourcetype\s*=\s*"?layerzero[_:](\w+)"?',
+                   lambda m: 'sourcetype="layerzero:%s"' % {
+                       "events": "event", "transactions": "transaction",
+                       "alerts": "alert", "ai_reports": "ai_report",
+                   }.get(m.group(1), m.group(1)), s)
+        # ensure the Argus index is present if SAIA omitted it / used index=*
+        if re.search(r'index\s*=\s*\*', s):
+            s = re.sub(r'index\s*=\s*\*', 'index=%s' % self.ARGUS_SCHEMA["index"], s, count=1)
+        elif "index=" not in s and "index =" not in s:
+            s = "index=%s " % self.ARGUS_SCHEMA["index"] + s.lstrip()
+        return s
 
     def explain_spl(self, spl: str) -> str:
         """Explain SPL via SAIA. Uses the same /predict + ask_splunk_question

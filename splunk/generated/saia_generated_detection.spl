@@ -1,19 +1,9 @@
 # Detection AUTHORED BY the Splunk AI Assistant (SAIA) from a plain-English
 # threat description, via Argus. Review before scheduling.
-# Prompt: Alert when a single LayerZero endpoint sends more than 5x its 7-day average message volume in one hour
-#
-# NOTE: captured VERBATIM as SAIA emitted it, to show the AI's authoring honestly.
-# SAIA chose a generic schema; to run against Argus's live data, map the sourcetype
-# `layerzero_events` -> `layerzero:event` and the `endpoint` field -> the indexed
-# field (e.g. `contract_name`). The detection LOGIC (5x the 7-day hourly baseline)
-# is unchanged by that mapping.
+# Prompt: Alert when a single from_address sends more than 20 failed transactions across any contracts within one hour
 
-index=* sourcetype=layerzero_events endpoint=* earliest=-7d@d latest=now
+index=omni_guard_security sourcetype="layerzero:transaction" failed_tx=1
 | bin _time span=1h
-| stats count as hour_count by endpoint _time
-| eventstats sum(hour_count) as total_7d by endpoint
-| eval avg_hourly = total_7d/(7*24)
-| where hour_count > 5*avg_hourly
-| rename endpoint as LayerZero_Endpoint, hour_count as message_volume, avg_hourly as avg_message_volume
-| eval severity_level = 4
-| fields _time LayerZero_Endpoint message_volume avg_message_volume severity_level
+| stats count as failed_tx_count by from_address _time
+| where failed_tx_count > 20
+| fields from_address failed_tx_count _time
