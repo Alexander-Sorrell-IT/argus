@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build the Argus trailer (1920x1080) from real, verified data. Frames -> ffmpeg."""
-import os, textwrap
+import os, subprocess
 from PIL import Image, ImageDraw, ImageFont
 
 W, H = 1920, 1080
@@ -129,10 +129,28 @@ center(d, 860, "github.com/Alexander-Sorrell-IT/argus", MONO(38), ACCENT)
 center(d, 930, "Splunk Agentic Ops Hackathon 2026  ·  AGPL-3.0", REG(30), MUTED)
 save(img, 5)
 
-# concat list
-with open(os.path.join(OUT, "list.txt"), "w") as fh:
-    for p, secs in frames:
-        fh.write(f"file '{p}'\nduration {secs}\n")
-    fh.write(f"file '{frames[-1][0]}'\n")
-print(f"frames={len(frames)} total_secs={sum(s for _,s in frames)}")
-print(os.path.join(OUT, "list.txt"))
+# Assemble: encode each slide to its own clip, then concat the CLIPS.
+# (The concat demuxer renders the first *image* black for its whole duration —
+# a known ffmpeg quirk — so we concat short video clips instead, which is reliable.)
+clips = []
+for idx, (p, secs) in enumerate(frames):
+    clip = os.path.join(OUT, f"clip_{idx:02d}.mp4")
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-t", str(secs),
+                    "-i", p, "-r", "30", "-c:v", "libx264", "-preset", "veryfast",
+                    "-crf", "20", "-pix_fmt", "yuv420p", "-vf", "format=yuv420p", clip],
+                   check=True)
+    clips.append(clip)
+
+listf = os.path.join(OUT, "clips.txt")
+with open(listf, "w") as fh:
+    for c in clips:
+        fh.write(f"file '{c}'\n")
+
+total = sum(s for _, s in frames)
+out_mp4 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "argus_trailer.mp4")
+subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0",
+                "-i", listf, "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                "-pix_fmt", "yuv420p",
+                "-vf", f"fade=t=in:st=0:d=0.5,fade=t=out:st={total-0.8:.1f}:d=0.8",
+                "-movflags", "+faststart", out_mp4], check=True)
+print(f"built {out_mp4}  ({len(frames)} slides, {total}s)")
