@@ -1,0 +1,7 @@
+address,label,source,added
+0x098B716B8Aaf21512996dC57EB0615e2383E2f96,Lazarus Group — Ronin Bridge exploiter,OFAC SDN list (2022),2026-06-15
+0x47CE0C6eD5B0Ce3d3A51fdb1C52DC66a7c3c2936,Tornado Cash mixer pool,OFAC-listed 2022 (delisted 2025-03),2026-06-15
+0x910Cbd523D972eb0a6f4cAe4618aD62622b39DbF,Tornado Cash mixer pool,OFAC-listed 2022 (delisted 2025-03),2026-06-15
+0xA160cdAB225685dA1d56aa342Ad8841c3b53f291,Tornado Cash mixer pool,OFAC-listed 2022 (delisted 2025-03),2026-06-15
+0x9C9fb3100a2A521985f0C47DE3b4598dafd25B01,TempleDAO StaxLPStaking exploiter (EOA),rekt.news/templedao-rekt,2026-06-15
+0x2df9C154Fe24D081cFE568645fb4075d725431E0,TempleDAO attack contract,rekt.news/templedao-rekt,2026-06-15

@@ -25,7 +25,6 @@ poc/findings/*/lib/
 # To publish privately tuned versions, branch off `private/main` instead
 agent/submission_template.py
 agent/foundry_gen.py
-splunk/lookups/bad_addresses.csv
 
 # ── massive vendored corpora (not needed by users; documented in README) ──
 layerzero-src/
