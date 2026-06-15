@@ -1,0 +1,34 @@
+{
+  "finding_dir": "qubit-bridge-2022",
+  "kind": "BENCHMARK_SPEC_OF_KNOWN_PUBLIC_HISTORICAL_EXPLOIT",
+  "is_novel_discovery": false,
+  "status": "SPEC",
+  "purpose": "Benchmark entry: a real, public, historical DeFi exploit used to measure whether Argus's detection classes catch its on-chain footprint. Adapt the referenced DeFiHackLabs PoC + fork-validate to upgrade SPEC -> CONFIRMED.",
+  "protocol": "Qubit Finance (QBridge)",
+  "vulnerability_class": "access_control",
+  "mechanism": "QBridge's legacy deposit(destinationChainID, resourceID, data) function on Ethereum failed to validate the deposited token amount against msg.value the way the newer depositETH() path did. The attacker supplied crafted calldata encoding the zero address (address(0)) as the tokenAddress and a large amount (~190 ETH) while attaching 0 ETH to the transaction. Because address(0) was whitelisted (the resourceID mapped to it) and tokenAddress.safeTransferFrom() does NOT revert when the target is the zero address / an EOA (no contract code), all checks passed. The contract emitted a Deposit event that QBridge's off-chain relayer interpreted as a genuine ETH lock, minting unbacked qXETH (Qubit xETH) to the attacker on BSC. The attacker repeated this to mint a large qXETH balance with no real collateral, then used the unbacked qXETH as collateral to borrow/drain the protocol's BSC assets (BNB, WETH, BTCB, stablecoins, CAKE, etc.), swapping out for ~206,809 BNB. Root cause: a deprecated/legacy deposit path left active with missing validation (zero-address tokenAddress accepted, value-vs-amount check absent), i.e. an input-validation / access-control flaw allowing forged zero-value deposits.",
+  "provenance": {
+    "chain": "ethereum",
+    "incident_date": "2022-01-27",
+    "attack_tx_hash": "0x478d83f2ad909c64a9a3d807b3d8399bb67a997f9721fc5580ae2c51fab92acf",
+    "attack_block": "14090197",
+    "attacker_address": "0xD01Ae1A708614948B2B5e0B7AB5be6AFA01325c7",
+    "victim_contract": "0x20E5E35ba29dC3B540a1aee781D0814D5c77Bce6",
+    "loss_usd_approx": "~$80,000,000",
+    "defihacklabs_ref": "src/test/2022-01/Qubit_exp.sol",
+    "source_urls": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/src/test/2022-01/Qubit_exp.sol",
+      "https://slowmist.medium.com/our-analysis-of-the-80m-qubit-finance-exploit-b0f272cd8c25",
+      "https://certik.medium.com/qubit-bridge-collapse-exploited-to-the-tune-of-80-million-a7ab9068e1a0",
+      "https://www.halborn.com/blog/post/explained-the-qubit-hack-january-2022",
+      "https://www.merklescience.com/blog/hack-track-analysis-of-qubit-finance-exploit",
+      "https://medium.com/@QubitFin/protocol-exploit-report-2-30aade4d66de",
+      "https://etherscan.io/tx/0x478d83f2ad909c64a9a3d807b3d8399bb67a997f9721fc5580ae2c51fab92acf"
+    ]
+  },
+  "argus_mapping": {
+    "argus_detection": "Multi-Step Attack Sequence",
+    "fork_reproducible": true,
+    "research_confidence": "HIGH"
+  }
+}

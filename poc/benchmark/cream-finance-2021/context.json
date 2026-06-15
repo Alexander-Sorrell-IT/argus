@@ -1,0 +1,35 @@
+{
+  "finding_dir": "cream-finance-2021",
+  "kind": "BENCHMARK_SPEC_OF_KNOWN_PUBLIC_HISTORICAL_EXPLOIT",
+  "is_novel_discovery": false,
+  "status": "SPEC",
+  "purpose": "Benchmark entry: a real, public, historical DeFi exploit used to measure whether Argus's detection classes catch its on-chain footprint. Adapt the referenced DeFiHackLabs PoC + fork-validate to upgrade SPEC -> CONFIRMED.",
+  "protocol": "Cream Finance (C.R.E.A.M.)",
+  "vulnerability_class": "oracle_manipulation",
+  "mechanism": "Price-oracle manipulation of the yUSD (Yearn yyDAI+yUSDC+yUSDT+yTUSD) Curve LP vault used as collateral in Cream's lending market. Cream's PriceOracleProxy valued crYUSD shares as (vault total underlying value) / (yUSDVault total supply). The attacker used flash liquidity (flash-minted ~500M DAI from MakerDAO plus Aave flash loans) to borrow a large amount of yUSD vault shares against collateral, then DIRECTLY DONATED ~8M yUSD (Yearn 4-Curve) tokens straight into the yUSDVault contract. Because a direct transfer increases the vault's totalAssets without minting new shares or updating debt, pricePerShare (and thus the oracle price of crYUSD collateral) roughly doubled atomically. The inflated collateral value let the attacker borrow essentially all liquidity across Cream's markets. Compounding root causes were a governance/listing error (an easily manipulatable, uncapped collateral token was listed) \u2014 credible post-mortems (Mudit Gupta, Immunefi, PeckShield/Beosin) characterize it as price/oracle manipulation, NOT reentrancy; the reentrancy framing in the task lead is not supported by the sources.",
+  "provenance": {
+    "chain": "ethereum",
+    "incident_date": "2021-10-27",
+    "attack_tx_hash": "0x0fe2542079644e107cbf13690eb9c2c65963ccb79089ff96bfaf8dced2331c92",
+    "attack_block": "13499797",
+    "attacker_address": "0x24354D31bC9D90F62FE5f2454709C32049cf866b",
+    "victim_contract": "0x4BAa77013ccD6705ab0522853cB0E9d453579Dd4",
+    "loss_usd_approx": "~$130M (Cream's figure; ~$117M per PeckShield)",
+    "defihacklabs_ref": "src/test/2021-10/Cream_2_exp.sol",
+    "source_urls": [
+      "https://mudit.blog/cream-hack-analysis/",
+      "https://medium.com/immunefi/hack-analysis-cream-finance-oct-2021-fc222d913fc5",
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/past/2021/README.md",
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/src/test/2021-10/Cream_2_exp.sol",
+      "https://etherscan.io/address/0x24354d31bc9d90f62fe5f2454709c32049cf866b",
+      "https://www.halborn.com/blog/post/explained-the-cream-finance-hack-october-2021",
+      "https://beosin.medium.com/theft-of-130-million-a-full-analysis-of-cream-finances-fifth-hack-this-year-10bf8fddcbf7",
+      "https://etherscan.io/tx/0x0fe2542079644e107cbf13690eb9c2c65963ccb79089ff96bfaf8dced2331c92"
+    ]
+  },
+  "argus_mapping": {
+    "argus_detection": "Multi-Step Attack Sequence",
+    "fork_reproducible": true,
+    "research_confidence": "HIGH"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "finding_dir": "visor-finance-2021",
+  "kind": "BENCHMARK_SPEC_OF_KNOWN_PUBLIC_HISTORICAL_EXPLOIT",
+  "is_novel_discovery": false,
+  "status": "SPEC",
+  "purpose": "Benchmark entry: a real, public, historical DeFi exploit used to measure whether Argus's detection classes catch its on-chain footprint. Adapt the referenced DeFiHackLabs PoC + fork-validate to upgrade SPEC -> CONFIRMED.",
+  "protocol": "Visor Finance (Gamma Strategies)",
+  "vulnerability_class": "access_control",
+  "mechanism": "The RewardsHypervisor (vVISR rewards/staking) contract's deposit() function trusted a caller-supplied address. deposit(visrDeposit, to, from) pulled VISR by calling IVisor(from).delegatedTransferERC20(...) and minted vVISR shares to `to`, while also reading the supplied contract's owner()/visor relationship for its require() check. Because `from` was attacker-controlled, the attacker passed their own malicious contract that (a) implemented owner() to return msg.sender so the require() check passed, and (b) implemented delegatedTransferERC20() as a no-op that transferred no real VISR. This let the attacker mint vVISR shares without actually depositing VISR. A reentrancy weakness in the same flow allowed duplicate stake-certificate issuance, so the attacker minted ~195,249,950 vVISR. They then called withdraw() to redeem the inflated shares for ~8,812,958 real VISR from the contract's holdings (~$8.2M), swapped via Uniswap v2 to ETH, and laundered through Tornado Cash. Root cause: unvalidated/trusted caller-supplied interface address (access control) compounded by missing reentrancy protection.",
+  "provenance": {
+    "chain": "ethereum",
+    "incident_date": "2021-12-21",
+    "attack_tx_hash": "0x69272d8c84d67d1da2f6425b339192fa472898dce936f24818fda415c1c1ff3f",
+    "attack_block": "13849007",
+    "attacker_address": "0x8Efab89b497b887CDaA2FB08ff71e4b3827774B2",
+    "victim_contract": "0xc9f27a50f82571c1c8423a42970613b8dbda14ef",
+    "loss_usd_approx": "~$8.2M (8,812,958 VISR at ~$0.93)",
+    "defihacklabs_ref": "src/test/2021-12/Visor_exp.sol (SunWeb3Sec/DeFiHackLabs); forks mainnet at block 13849006",
+    "source_urls": [
+      "https://rekt.news/visor-finance-rekt",
+      "https://beosin.medium.com/two-vulnerabilities-in-one-function-the-analysis-of-visor-finance-exploit-a15735e2492",
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/34cce572d25175ca915445f2ce7f7fbbb7cb593b/src/test/2021-12/Visor_exp.sol",
+      "https://etherscan.io/tx/0x69272d8c84d67d1da2f6425b339192fa472898dce936f24818fda415c1c1ff3f",
+      "https://etherscan.io/address/0xc9f27a50f82571c1c8423a42970613b8dbda14ef",
+      "https://etherscan.io/token/0xf938424f7210f31df2aee3011291b658f872e91e"
+    ]
+  },
+  "argus_mapping": {
+    "argus_detection": "Value/Token Transfer Outlier",
+    "fork_reproducible": true,
+    "research_confidence": "HIGH"
+  }
+}

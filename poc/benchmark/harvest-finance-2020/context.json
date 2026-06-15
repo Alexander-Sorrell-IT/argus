@@ -1,0 +1,34 @@
+{
+  "finding_dir": "harvest-finance-2020",
+  "kind": "BENCHMARK_SPEC_OF_KNOWN_PUBLIC_HISTORICAL_EXPLOIT",
+  "is_novel_discovery": false,
+  "status": "SPEC",
+  "purpose": "Benchmark entry: a real, public, historical DeFi exploit used to measure whether Argus's detection classes catch its on-chain footprint. Adapt the referenced DeFiHackLabs PoC + fork-validate to upgrade SPEC -> CONFIRMED.",
+  "protocol": "Harvest Finance",
+  "vulnerability_class": "oracle_manipulation",
+  "mechanism": "Harvest Finance's stablecoin vaults (fUSDC / fUSDT) computed their share price (fToken mint/redeem rate) from the on-chain spot price of the underlying inside Curve's \"Y\" pool, treating Curve as a trusted price oracle. The attacker took a large flash loan (~$50M USDT from Uniswap) and, within a single transaction/session, used Curve's exchange_underlying to swap ~$11.4M USDC->USDT to skew the Y pool and artificially inflate USDT's perceived value (and depress USDC's). They deposited into the vault at the manipulated, favorable share price, then reversed the Curve swap to restore the price, and withdrew vault shares at the now-normal rate \u2014 extracting more underlying than deposited each cycle. This deposit-swap-revert-withdraw loop was repeated many times (~17-32 cycles over ~7 minutes) across fUSDC and fUSDT, draining excess underlying funded by other depositors. No smart-contract code was \"broken\"; the flaw was using a manipulable AMM spot price as the share-price oracle.",
+  "provenance": {
+    "chain": "ethereum",
+    "incident_date": "2020-10-26",
+    "attack_tx_hash": "0x35f8d2f572fceaac9288e5d462117850ef2694786992a8c3f6d02612277b0877",
+    "attack_block": "11129474",
+    "attacker_address": "0xF224ab004461540778a914ea397c589b677E27bb",
+    "victim_contract": "0xf0358e8c3CD5Fa238a29301d0bEa3D63A17bEdBE",
+    "loss_usd_approx": "~$33.8M drained (~$31M net after attacker returned ~$2.5M); commonly cited $24M-$34M",
+    "defihacklabs_ref": "src/test/2020-10/HarvestFinance_exp.sol",
+    "source_urls": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/src/test/2020-10/HarvestFinance_exp.sol",
+      "https://www.theblock.co/post/82292/defi-protocol-harvest-finance-exploited",
+      "https://slowmist.medium.com/slow-mist-analysis-of-harvest-finances-hacked-event-63450b49e6a5",
+      "https://www.coindesk.com/tech/2020/10/26/harvest-finance-24m-attack-triggers-570m-bank-run-in-latest-defi-exploit",
+      "https://etherscan.io/tx/0x35f8d2f572fceaac9288e5d462117850ef2694786992a8c3f6d02612277b0877",
+      "https://etherscan.io/address/0xf0358e8c3CD5Fa238a29301d0bEa3D63A17bEdBE",
+      "https://etherscan.io/token/0xc7EE21406BB581e741FBb8B21f213188433D9f2F"
+    ]
+  },
+  "argus_mapping": {
+    "argus_detection": "Multi-Step Attack Sequence",
+    "fork_reproducible": true,
+    "research_confidence": "HIGH"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "finding_dir": "rari-fuse-2022",
+  "kind": "BENCHMARK_SPEC_OF_KNOWN_PUBLIC_HISTORICAL_EXPLOIT",
+  "is_novel_discovery": false,
+  "status": "SPEC",
+  "purpose": "Benchmark entry: a real, public, historical DeFi exploit used to measure whether Argus's detection classes catch its on-chain footprint. Adapt the referenced DeFiHackLabs PoC + fork-validate to upgrade SPEC -> CONFIRMED.",
+  "protocol": "Rari Capital Fuse / Fei Protocol",
+  "vulnerability_class": "reentrancy",
+  "mechanism": "Cross-contract reentrancy via CEI violation in Fuse (Compound-fork) lending pools. The attacker took a Balancer flash loan of USDC, minted fUSDC collateral, entered the market, then called borrow() on the CEther (fETH) contract. CEther sent ETH to the borrower using an unbounded .call.value()() (instead of .transfer()'s 2300-gas cap), allowing arbitrary code in the attacker's receive() fallback. The borrower's debt/borrow state was updated AFTER the ETH transfer (checks-effects-interactions violation), and critically the Comptroller's exitMarket() was NOT covered by Fuse's local/global reentrancy lock. During the borrow callback, the attacker re-entered exitMarket() to drop the collateral check, then redeemUnderlying() to withdraw all supplied collateral while still holding the borrowed funds, draining the pool. Repeated across 7 Fuse pools (8, 18, 27, 127, 144, 146, 156). The DeFiHackLabs PoC reproduces pool 127.",
+  "provenance": {
+    "chain": "ethereum",
+    "incident_date": "2022-04-30",
+    "attack_tx_hash": "0xab486012f21be741c9e674ffda227e30518e8a1e37a5f1d58d0b0d41f6e76530",
+    "attack_block": "14684813",
+    "attacker_address": "0x6162759edad730152f0df8115c698a42e666157f",
+    "victim_contract": "0x3f2D1BC6D02522dbcdb216b2e75eDDdAFE04B16F",
+    "loss_usd_approx": "~$80M (approx $79.75M)",
+    "defihacklabs_ref": "src/test/2022-04/Rari_exp.sol",
+    "source_urls": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/src/test/2022-04/Rari_exp.sol",
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/past/2022/README.md",
+      "https://rekt.news/fei-rari-rekt",
+      "https://certik.medium.com/fei-protocol-incident-analysis-8527440696cc",
+      "https://medium.com/@JackLongarzo/fuse-exploit-post-mortem-76ce18d8974",
+      "https://etherscan.io/tx/0xab486012f21be741c9e674ffda227e30518e8a1e37a5f1d58d0b0d41f6e76530",
+      "https://twitter.com/peckshield/status/1520369315698016256"
+    ]
+  },
+  "argus_mapping": {
+    "argus_detection": "Multi-Step Attack Sequence",
+    "fork_reproducible": true,
+    "research_confidence": "HIGH"
+  }
+}

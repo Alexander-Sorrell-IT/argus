@@ -1,0 +1,35 @@
+{
+  "finding_dir": "nomad-bridge-2022",
+  "kind": "BENCHMARK_SPEC_OF_KNOWN_PUBLIC_HISTORICAL_EXPLOIT",
+  "is_novel_discovery": false,
+  "status": "SPEC",
+  "purpose": "Benchmark entry: a real, public, historical DeFi exploit used to measure whether Argus's detection classes catch its on-chain footprint. Adapt the referenced DeFiHackLabs PoC + fork-validate to upgrade SPEC -> CONFIRMED.",
+  "protocol": "Nomad Bridge (Nomad cross-chain token bridge)",
+  "vulnerability_class": "logic_error",
+  "mechanism": "Improper trusted-root initialization in the Nomad Replica contract. During a routine implementation upgrade on 2022-04-21, the new Replica logic was initialized with a \"committed root\" value of 0x00, which was written into the confirmAt mapping as an acceptable/trusted root. Because Solidity mappings return 0x00 for any unset key, the message proving path Replica.process() -> acceptableRoot() treated the zero root as confirmed, so ANY message hash that was not yet present in the messages mapping (returning 0x00) was deemed \"proven\" and processed. Attackers needed no valid Merkle proof: they simply called Replica.process(_message) with a crafted message whose recipient was their own address. The very first large drain tx (0xa5fe9d04...4a5460, block 15259101, Aug-01-2022 21:32 UTC) was sent from bitliq.eth (0xa8c83b1b30291a3a1a118058b5445cc83041cd9d) and released 100 WBTC. Hundreds of copycats then copied that transaction's calldata, swapped in their own receiver address, and re-broadcast it, draining ~$190M in a chaotic free-for-all. This matches the prior audit finding QSP-19 \"Proving With An Empty Leaf.\" Etherscan labels 0x56d8b635a7c88fd1104d23d632af40c1c3aac4e3 as \"Nomad Bridge Exploiter 1.\"",
+  "provenance": {
+    "chain": "ethereum",
+    "incident_date": "2022-08-01",
+    "attack_tx_hash": "0xa5fe9d044e4f3e5aa5bc4c0709333cd2190cba0f4e7f16bcf73f49f83e4a5460",
+    "attack_block": "15259101",
+    "attacker_address": "0x56d8b635a7c88fd1104d23d632af40c1c3aac4e3",
+    "victim_contract": "0x5D94309E5a0090b165FA4181519701637B6DAEBA",
+    "loss_usd_approx": "~$190M (DeFiHackLabs PoC estimates ~$152M)",
+    "defihacklabs_ref": "src/test/2022-08/NomadBridge_exp.sol (SunWeb3Sec/DeFiHackLabs)",
+    "source_urls": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/src/test/2022-08/NomadBridge_exp.sol",
+      "https://medium.com/immunefi/hack-analysis-nomad-bridge-august-2022-5aa63d53814a",
+      "https://www.coinbase.com/blog/nomad-bridge-incident-analysis",
+      "https://www.certik.com/resources/blog/28fMavD63CpZJOKOjb9DX3-nomad-bridge-exploit-incident-analysis",
+      "https://www.halborn.com/blog/post/explained-the-nomad-hack-august-2022",
+      "https://etherscan.io/address/0x56d8b635a7c88fd1104d23d632af40c1c3aac4e3",
+      "https://etherscan.io/tx/0xa5fe9d044e4f3e5aa5bc4c0709333cd2190cba0f4e7f16bcf73f49f83e4a5460",
+      "https://etherscan.io/address/0xb92336759618f55bd0f8313bd843604592e27bd8"
+    ]
+  },
+  "argus_mapping": {
+    "argus_detection": "Multi-Step Attack Sequence",
+    "fork_reproducible": true,
+    "research_confidence": "HIGH"
+  }
+}

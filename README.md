@@ -109,6 +109,11 @@ TempleDAO replay (it exercises `migrateStake`). The Reentrancy "fork-provable" e
 demonstrated by the capability **self-test** (a deliberately-planted vulnerable contract),
 not a mainnet fork-replay of a discovered bug.
 
+**Benchmark:** [`poc/benchmark/`](poc/benchmark/README.md) maps Argus's coverage against **10
+real, public DeFi exploits** (Nomad, Euler, Wormhole, Beanstalk, Cream, Harvest, Qubit, Rari,
+Visor, Multichain) — a regression suite for "does the SOC catch known attack classes," each spec
+verified from public post-mortems with the source links in its `context.json`.
+
 ---
 
 ## Closed loop (optional, flag-gated)

@@ -1,0 +1,34 @@
+{
+  "finding_dir": "beanstalk-2022",
+  "kind": "BENCHMARK_SPEC_OF_KNOWN_PUBLIC_HISTORICAL_EXPLOIT",
+  "is_novel_discovery": false,
+  "status": "SPEC",
+  "purpose": "Benchmark entry: a real, public, historical DeFi exploit used to measure whether Argus's detection classes catch its on-chain footprint. Adapt the referenced DeFiHackLabs PoC + fork-validate to upgrade SPEC -> CONFIRMED.",
+  "protocol": "Beanstalk Farms",
+  "vulnerability_class": "flash_loan_governance",
+  "mechanism": "Beanstalk on-chain governance used the native Stalk token for voting power, measured via a non-flash-loan-resistant in-block snapshot. The attacker first submitted malicious proposal BIP-18 (an InitDiamondCut-style facet that would transfer all protocol assets to the attacker), then in a later transaction took roughly 1B USD in flash loans (DAI/USDC/USDT from Aave, BEAN from Uniswap V2, LUSD from SushiSwap), deposited them into Beanstalk to mint a greater-than-two-thirds supermajority of Stalk voting power within a single transaction. With supermajority reached, the attacker called the Beanstalk Diamond emergencyCommit() function, which bypassed the normal proposal lifecycle (only a 24h proposal age required) and executed the malicious BIP via delegatecall. The delegatecall ran attacker-controlled logic that swept the protocol BEAN3CRV and BEANLUSD collateral to the attacker contract. The flash loans were repaid in the same transaction; the attacker also pushed BIP-19 to donate 250k USD of BEAN to Ukraine. Net theft of non-BEAN collateral was converted to roughly 24,830 WETH (approx 76M USD).",
+  "provenance": {
+    "chain": "ethereum",
+    "incident_date": "2022-04-17",
+    "attack_tx_hash": "0xcd314668aaa9bbfebaf1a0bd2b6553d01dd58899c508d4729fa7311dc5d33ad7",
+    "attack_block": "14596000",
+    "attacker_address": "0x1c5dCdd006EA78a7E4783f9e6021C32935a10fb4",
+    "victim_contract": "0xC1E088fC1323b20BCBee9bd1B9fC9546db5624C5",
+    "loss_usd_approx": "approx 182M USD total protocol loss; approx 76M USD (24,830 WETH) net attacker profit",
+    "defihacklabs_ref": "src/test/2022-04/Beanstalk_exp.sol",
+    "source_urls": [
+      "https://rekt.news/beanstalk-rekt/",
+      "https://medium.com/immunefi/hack-analysis-beanstalk-governance-attack-april-2022-f42788fc821e",
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/src/test/2022-04/Beanstalk_exp.sol",
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/past/2022/README.md",
+      "https://www.halborn.com/blog/post/explained-the-beanstalk-hack-april-2022",
+      "https://www.certik.com/resources/blog/revisiting-beanstalk-farms-exploit",
+      "https://cointelegraph.com/news/beanstalk-farms-loses-182m-in-defi-governance-exploit"
+    ]
+  },
+  "argus_mapping": {
+    "argus_detection": "Privileged Function Call",
+    "fork_reproducible": true,
+    "research_confidence": "HIGH"
+  }
+}

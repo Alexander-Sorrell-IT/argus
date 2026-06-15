@@ -1,0 +1,35 @@
+{
+  "finding_dir": "wormhole-bridge-2022",
+  "kind": "BENCHMARK_SPEC_OF_KNOWN_PUBLIC_HISTORICAL_EXPLOIT",
+  "is_novel_discovery": false,
+  "status": "SPEC",
+  "purpose": "Benchmark entry: a real, public, historical DeFi exploit used to measure whether Argus's detection classes catch its on-chain footprint. Adapt the referenced DeFiHackLabs PoC + fork-validate to upgrade SPEC -> CONFIRMED.",
+  "protocol": "Wormhole (Portal Token Bridge)",
+  "vulnerability_class": "signature_replay",
+  "mechanism": "Guardian signature-verification bypass on Wormhole's Solana program. The verify_signatures instruction relied on the deprecated load_instruction_at (Solana solana_program::sysvar::instructions) to confirm that the Secp256k1 precompile had been invoked before signature verification, but load_instruction_at did NOT validate that the supplied account was the genuine Instructions sysvar (Sysvar1nstructions1111...). The attacker passed a spoofed/pre-crafted account in place of the real Instructions sysvar containing fabricated data indicating a successful prior Secp256k1 call. This caused the program to create a valid SignatureSet without any real guardian (2/3 quorum) signatures, letting the attacker forge a VAA (Verifiable Action Approval) that authorized minting 120,000 Wormhole-wrapped ETH (wETH) on Solana with no backing collateral. The attacker then bridged 93,750 of that wETH back to Ethereum (redeeming ~90,000 as withdrawals from the Ethereum Portal bridge contract, e.g. an 80,000 wETH withdrawal) and swapped the remaining ~26,250 wETH on Solana into ~432,662 SOL. Fix: Solana contracts patched to use load_instruction_at_checked, which validates the sysvar account.",
+  "provenance": {
+    "chain": "Solana (exploit/forged VAA mint) + Ethereum (wETH redeemed/withdrawn)",
+    "incident_date": "2022-02-02",
+    "attack_tx_hash": "Solana mint VAA tx: 2zCz2GgSoSS68eNJENWrYB48dMM1zmH8SZkgYneVDv2G4gRsVfwu5rNXtK5BKFxn7fSqX9BvrBc1rdPAeBEcD6Es ; Ethereum 80,000 wETH withdrawal from bridge: 0x24c7d855a0a931561e412d809e2596c3fd861cc7385566fd1cb528f9e93e5f14",
+    "attack_block": "Ethereum block 14128237 (for tx 0x24c7d855...); Solana slot not verified",
+    "attacker_address": "0x629e7Da20197a5429d30da36E77d06CdF796b71A (Ethereum); CxegPrfn2ge5dNiQberUrQJkHCcimeR4VXkeawcFBBka (Solana)",
+    "victim_contract": "Wormhole Solana core/token-bridge program (forged VAA mint); Ethereum Portal Token Bridge contract 0x3ee18B2214AFF97000D974cf647E7C347E8fa585 (wETH redeemed/withdrawn)",
+    "loss_usd_approx": "~$326M (120,000 wETH at the time)",
+    "defihacklabs_ref": "",
+    "source_urls": [
+      "https://www.halborn.com/blog/post/explained-the-wormhole-hack-february-2022",
+      "https://kudelskisecurity.com/research/quick-analysis-of-the-wormhole-attack",
+      "https://www.chainalysis.com/blog/wormhole-hack-february-2022/",
+      "https://etherscan.io/tx/0x24c7d855a0a931561e412d809e2596c3fd861cc7385566fd1cb528f9e93e5f14",
+      "https://medium.com/breadcrumbsapp/wormhole-exploit-an-analysis-b966effc36f2",
+      "https://certik.medium.com/wormhole-bridge-exploit-analysis-5068d79cbb71",
+      "https://medium.com/ackee-blockchain/2022-solana-hacks-explained-wormhole-746f4fe8bb5a",
+      "https://www.elliptic.co/blog/325-million-stolen-from-wormhole-defi-service"
+    ]
+  },
+  "argus_mapping": {
+    "argus_detection": "Value/Token Transfer Outlier \u2014 Argus (EVM/Splunk-native) cannot observe the Solana-side signature forgery, but the Ethereum-side footprint is an anomalously large outflow (80,000 + 10,000 wETH \u2248 $146M+ in single txs) from the bridge contract to the attacker, which a z-score on value drained would flag. Note: the actual root-cause logic (verify_signatures/sysvar spoofing) is on Solana and is a gap for an EVM-only detector.",
+    "fork_reproducible": false,
+    "research_confidence": "HIGH"
+  }
+}

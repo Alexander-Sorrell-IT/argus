@@ -1,0 +1,36 @@
+{
+  "finding_dir": "multichain-anyswap-2022",
+  "kind": "BENCHMARK_SPEC_OF_KNOWN_PUBLIC_HISTORICAL_EXPLOIT",
+  "is_novel_discovery": false,
+  "status": "SPEC",
+  "purpose": "Benchmark entry: a real, public, historical DeFi exploit used to measure whether Argus's detection classes catch its on-chain footprint. Adapt the referenced DeFiHackLabs PoC + fork-validate to upgrade SPEC -> CONFIRMED.",
+  "protocol": "Multichain (formerly Anyswap) \u2014 AnyswapV4Router cross-chain bridge",
+  "vulnerability_class": "signature_replay",
+  "mechanism": "The AnyswapV4Router function anySwapOutUnderlyingWithPermit() (and sibling ...WithPermit functions) called token.permit(from, router, amount, deadline, v, r, s) before pulling the user's tokens. Two flaws combined: (1) the function never validated that the supplied `token` was a legitimate Multichain anyToken/underlying \u2014 an attacker could pass an arbitrary token such as canonical WETH; and (2) WETH (and several other tokens like WBNB/MATIC/AVAX) does NOT implement permit() but has a non-reverting fallback function (WETH's fallback is deposit()). This \"phantom function\" meant the permit() call silently succeeded as a no-op even with a zero/empty signature (v=0, r=0x, s=0x), so signature verification was effectively bypassed. Because Multichain had instructed users to grant near-infinite ERC20 approvals to the router to save gas, the attacker could call the function with a victim's address as `from` and, with no valid signature, have the router transferFrom the victim's pre-approved WETH to an attacker-controlled address. PoC forks mainnet at block 14037236 and calls anySwapOutUnderlyingWithPermit(victim, attackerToken, msg.sender, amount, deadline, 0, \"0x\", \"0x\", 56).",
+  "provenance": {
+    "chain": "ethereum",
+    "incident_date": "2022-01-18",
+    "attack_tx_hash": "0xe50ed602bd916fc304d53c4fed236698b71691a95774ff0aeeb74b699c6227f7",
+    "attack_block": "14037237",
+    "attacker_address": "0xFA2731d0BEde684993AB1109DB7ecf5bF33E8051",
+    "victim_contract": "0x6b7a87899490EcE95443e979cA9485CBE7E71522",
+    "loss_usd_approx": "~$3M stolen across multiple attackers (~1,889.66 WETH + 833.42 AVAX; ~$1M+ returned by a whitehat; net ~976.86 WETH lost). ~$431M in WETH was at risk from existing infinite approvals before mitigation. Single referenced attack tx drained 308.64 WETH (~$565K).",
+    "defihacklabs_ref": "src/test/2022-01/Anyswap_exp.sol (SunWeb3Sec/DeFiHackLabs); README entry \"20220118 Multichain (Anyswap) - Insufficient Token Validation\", run: forge test --contracts ./src/test/2022-01/Anyswap_exp.sol -vv",
+    "source_urls": [
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/src/test/2022-01/Anyswap_exp.sol",
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/past/2022/README.md",
+      "https://medium.com/multichainorg/multichain-contract-vulnerability-post-mortem-d37bfab237c8",
+      "https://medium.com/zengo/without-permit-multichains-exploit-explained-8417e8c1639b",
+      "https://dedaub.com/blog/phantom-functions-and-the-billion-dollar-no-op/",
+      "https://etherscan.io/tx/0xe50ed602bd916fc304d53c4fed236698b71691a95774ff0aeeb74b699c6227f7",
+      "https://etherscan.io/address/0x6b7a87899490ece95443e979ca9485cbe7e71522",
+      "https://www.halborn.com/blog/post/explained-the-multichain-hack-january-2022",
+      "https://twitter.com/PeckShieldAlert/status/1483363515411099651"
+    ]
+  },
+  "argus_mapping": {
+    "argus_detection": "Value/Token Transfer Outlier",
+    "fork_reproducible": true,
+    "research_confidence": "HIGH"
+  }
+}

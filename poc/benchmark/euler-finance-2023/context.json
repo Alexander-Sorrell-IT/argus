@@ -1,0 +1,34 @@
+{
+  "finding_dir": "euler-finance-2023",
+  "kind": "BENCHMARK_SPEC_OF_KNOWN_PUBLIC_HISTORICAL_EXPLOIT",
+  "is_novel_discovery": false,
+  "status": "SPEC",
+  "purpose": "Benchmark entry: a real, public, historical DeFi exploit used to measure whether Argus's detection classes catch its on-chain footprint. Adapt the referenced DeFiHackLabs PoC + fork-validate to upgrade SPEC -> CONFIRMED.",
+  "protocol": "Euler Finance",
+  "vulnerability_class": "logic_error",
+  "mechanism": "The Euler EToken module's donateToReserves function was missing the liquidity/health check (checkLiquidity) that all other EToken transfers enforce. Using an Aave flash loan, the attacker deposited (minting eDAI), recursively borrowed against themselves to build a leveraged collateral+debt position (\"mint\"), then called donateToReserves to give away a large chunk of eDAI collateral. This artificially pushed the account underwater WITHOUT triggering the health check, making it eligible for liquidation. Because of Euler's dynamic liquidation discount, the attacker then self-liquidated via a second contract, capturing the inflated discount/remaining collateral and withdrawing more underlying than the deposit. The pattern was repeated across multiple pools (DAI, WBTC, wstETH, USDC, stETH/WETH). The donateToReserves function had been added in EIP-14 (deployed ~July/Aug 2022) and audited by Sherlock, who later accepted responsibility for missing the bug.",
+  "provenance": {
+    "chain": "ethereum",
+    "incident_date": "2023-03-13",
+    "attack_tx_hash": "0xc310a0affe2169d1f6feec1c63dbc7f7c62a887fa48795d327d4d2da2d6b111d",
+    "attack_block": "16817996",
+    "attacker_address": "0xb66cd966670d962C227B3EABA30a872DbFb995db",
+    "victim_contract": "0x27182842E098f60e3D576794A5bFFb0777E025d3",
+    "loss_usd_approx": "~197000000",
+    "defihacklabs_ref": "src/test/2023-03/Euler_exp.sol",
+    "source_urls": [
+      "https://www.zellic.io/blog/euler-finance-exploit-analysis/",
+      "https://blocksec.com/blog/euler-finance-incident-the-largest-hack-of-2023",
+      "https://slowmist.medium.com/slowmist-an-analysis-of-the-attack-on-euler-finance-5143abc0d5ad",
+      "https://medium.com/@omniscia.io/euler-finance-incident-post-mortem-1ce077c28454",
+      "https://etherscan.io/tx/0xc310a0affe2169d1f6feec1c63dbc7f7c62a887fa48795d327d4d2da2d6b111d",
+      "https://etherscan.io/address/0xb66cd966670d962c227b3eaba30a872dbfb995db",
+      "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/src/test/2023-03/Euler_exp.sol"
+    ]
+  },
+  "argus_mapping": {
+    "argus_detection": "Multi-Step Attack Sequence",
+    "fork_reproducible": true,
+    "research_confidence": "HIGH"
+  }
+}
