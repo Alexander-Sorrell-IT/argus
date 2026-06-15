@@ -72,7 +72,7 @@ Every layer leans on Splunk's own primitives:
    Immunefi rules             ─── scope contracts + impact tiers + bounty caps
                               │
                               ▼
-   DETECTION (12 active detections + 3 scoring/baseline jobs, cron 5m–6h)
+   DETECTION (13 detections incl. 1 disabled MLTK + 3 scoring/baseline jobs, cron 5m–6h)
    ─────────────────────────────────────────
    1. Value Outlier (z-score per contract, kvstore baseline)
    2. Sender Behavior Outlier

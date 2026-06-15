@@ -33,6 +33,9 @@ def main():
 
     m = re.search(r"```(?:splunk-spl|spl)?\s*(.+?)```", answer, re.S)
     spl = (m.group(1).strip() if m else answer.strip())
+    # Handle the single-fence case (opening ``` with no close): strip stray fence lines so
+    # the saved artifact is valid, runnable SPL rather than a broken code block.
+    spl = re.sub(r"^\s*```[\w-]*\s*$", "", spl, flags=re.M).strip()
     out_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "splunk", "generated")
     os.makedirs(out_dir, exist_ok=True)
     out = os.path.join(out_dir, "saia_generated_detection.spl")

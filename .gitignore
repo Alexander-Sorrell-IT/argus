@@ -51,7 +51,6 @@ demo/work/
 demo/shots/
 demo/voice/
 demo/argus_demo.mp4
-demo/argus_trailer.mp4
 demo/mermaid.min.js
 
 # ── runtime junk ────────────────────────────────────────────────────
@@ -75,6 +74,8 @@ SUBMISSION_READINESS.md
 
 # No demo videos in the repo — they are uploaded to YouTube/Vimeo, not shipped
 demo/*.mp4
+# ...except the short rendered trailer, which IS shipped (small; see README "Demo")
+!demo/argus_trailer.mp4
 
 # Build/scratch from this session
 .argus_*.js

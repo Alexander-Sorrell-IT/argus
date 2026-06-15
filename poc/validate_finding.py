@@ -136,9 +136,9 @@ class ForkValidator:
             return 0
 
     # ── Optional Foundry test run ──────────────────────────────────────────────
-    def _run_foundry_test(self, test_path: Path) -> tuple[bool, str]:
+    def _run_foundry_test(self, test_path: Path) -> tuple[Optional[bool], str]:
         if not test_path.exists():
-            return False, f"test file not found: {test_path}"
+            return None, f"test file not found: {test_path}"
         project_dir = test_path.parent
         # Minimal foundry.toml if absent so `forge test` works standalone
         ftoml = project_dir / "foundry.toml"
@@ -157,19 +157,21 @@ class ForkValidator:
             r = subprocess.run(cmd, capture_output=True, text=True,
                                timeout=180, env=env)
             out = r.stdout + "\n" + r.stderr
-            # Require genuine pass evidence. `forge test` exits 0 even on "No tests
-            # found", so returncode is NOT sufficient — that produced false CONFIRMEDs.
-            # Parse the summary: need >=1 passed and 0 failed; else look for [PASS]/[FAIL].
-            # Require pass evidence across the WHOLE run. A per-suite "N passed; 0
-            # failed" line can hide failures in OTHER suites (e.g. leaked lib tests),
-            # so demand a [PASS] with NO [FAIL anywhere and no "N failing tests" summary.
+            # Tri-state outcome. A compile error or "no tests found" is NOT a non-reproduction
+            # and must NOT be reported as a failed (REJECTED) test — only a test that actually
+            # RAN and failed is False; anything non-runnable is None (→ INCONCLUSIVE). (`forge
+            # test` exits 0 even on "No tests found", so returncode alone is not sufficient.)
             no_fail = ("[FAIL" not in out) and not re.search(r"[1-9]\d*\s+failing tests", out)
-            passed = ("[PASS]" in out) and no_fail and ("No tests" not in out)
-            return passed, out[-4000:]
+            ran_fail = ("[FAIL" in out) or bool(re.search(r"[1-9]\d*\s+failing tests", out))
+            if ("[PASS]" in out) and no_fail and ("No tests" not in out):
+                return True, out[-4000:]      # a test genuinely passed
+            if ran_fail:
+                return False, out[-4000:]     # a test ran and FAILED — a real non-reproduction
+            return None, out[-4000:]          # compile error / no runnable test → INCONCLUSIVE
         except subprocess.TimeoutExpired:
-            return False, "forge test timed out after 180s"
+            return None, "forge test timed out after 180s"
         except Exception as e:
-            return False, f"forge test error: {e}"
+            return None, f"forge test error: {e}"
 
     # ── Parse the gain the Foundry test itself emitted ──────────────────────────
     @staticmethod
@@ -184,7 +186,13 @@ class ForkValidator:
             out or "")
         if not m:
             return ""
-        return f"{m.group(2).replace(',', '')} ({m.group(1).strip()}, asserted by the test)"
+        val = m.group(2).replace(",", "")
+        try:
+            if float(val) <= 0:   # a zero/negative emitted figure is not evidence of extraction
+                return ""
+        except ValueError:
+            return ""
+        return f"{val} ({m.group(1).strip()}, asserted by the test)"
 
     # ── Main ───────────────────────────────────────────────────────────────────
     def validate(
@@ -256,7 +264,10 @@ class ForkValidator:
                     "assertions on a local fork (gain is asserted inside the test, not measured "
                     "via fork balances)" + gain_note)
             elif test_passed is False:
-                status, conf, reason = "REJECTED", 0.8, "forge test failed — exploit hypothesis did not reproduce"
+                status, conf, reason = "REJECTED", 0.8, "forge test ran and FAILED — exploit hypothesis did not reproduce"
+            elif foundry_test:
+                status, conf, reason = "INCONCLUSIVE", 0.3, ("supplied test did not compile / produced no "
+                    "runnable result — cannot prove or disprove (trace recorded)")
             else:
                 status, conf, reason = "INCONCLUSIVE", 0.3, "no test supplied; trace recorded for review"
 

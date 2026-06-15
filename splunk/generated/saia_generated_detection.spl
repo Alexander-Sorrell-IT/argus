@@ -2,7 +2,6 @@
 # threat description, via Argus. Review before scheduling.
 # Prompt: Flag any layerzero:transaction whose gas_used is more than 3 standard deviations above the per-contract mean; output _time, tx_hash, contract_name, gas_used.
 
-```splunk-spl
 index=omni_guard_security sourcetype="layerzero:transaction"
 | eval gas_used_num=tonumber(gas_used)
 | eventstats avg(gas_used_num) as mean_gas stdev(gas_used_num) as stddev_gas by contract_name

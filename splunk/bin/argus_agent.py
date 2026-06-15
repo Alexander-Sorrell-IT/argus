@@ -29,6 +29,7 @@ import sys
 import json
 import time
 import hashlib
+import shutil
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib"))
 
@@ -61,7 +62,7 @@ AUTO_VALIDATE = os.getenv("ARGUS_AUTO_VALIDATE", "0") == "1"
 # pre-written one (the generation half of the loop). On by default once AUTO_VALIDATE is
 # on. SAIA only drafts the hypothesis — the verdict still comes from a real Foundry [PASS].
 SAIA_DRAFT = os.getenv("ARGUS_SAIA_DRAFT", "1") == "1"
-SYS_PYTHON = os.getenv("ARGUS_SYS_PYTHON", "/usr/local/bin/python3")
+SYS_PYTHON = os.getenv("ARGUS_SYS_PYTHON") or shutil.which("python3") or sys.executable
 
 def _argus_repo():
     for c in (os.getenv("ARGUS_HOME"), os.path.expanduser("~/argus"),

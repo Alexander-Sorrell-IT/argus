@@ -6,6 +6,8 @@
 
 Built for the **Splunk Agentic Ops Hackathon 2026** (Security track).
 
+📺 **Demo trailer:** [`demo/argus_trailer.mp4`](demo/argus_trailer.mp4) (1080p, ~40s).
+
 Argus turns Splunk into a security operations center for production smart
 contracts. Point it at any DeFi protocol via a single YAML config and get
 continuous monitoring, statistical anomaly detection, audit-aware
@@ -101,6 +103,12 @@ proves whether a candidate is a real exploit. Gaps are listed, not hidden.
 | Message / packet replay | _removed — false-positived on normal LZ delivery_ | — | — _(gap / backlog)_ |
 | Oracle / price manipulation | _not yet covered_ | — | — _(gap / backlog)_ |
 
+**Notes:** the Privileged Function Call rule fires only when a privileged selector actually
+appears on-chain — the bundled ERC-20 sample contains none, so to watch it fire, run the
+TempleDAO replay (it exercises `migrateStake`). The Reentrancy "fork-provable" entry is
+demonstrated by the capability **self-test** (a deliberately-planted vulnerable contract),
+not a mainnet fork-replay of a discovered bug.
+
 ---
 
 ## Closed loop (optional, flag-gated)
@@ -119,8 +127,9 @@ deterministic (zero AI calls).
 
 ## What's installed
 
-The hackathon entry's primary surface is the custom app and its in-app
-agent. Several Splunk apps are installed alongside it:
+The hackathon entry's primary surface is the custom app and its in-app agent. It
+*integrates with* these Splunk apps where present — install from Splunkbase as needed
+(not all are installed on every instance, and none are required for the core pipeline):
 
 - **Argus Security Monitor** (this app) — custom SPL detections,
   dashboard, lookups, and the live `argus_agent.py` modular input

@@ -14,7 +14,7 @@ deprecated/never-activated roadmap code. We do **not** hide working detections.
 
 - **Every saved search** in `splunk/default/savedsearches.conf` — all of them,
   renamed from the legacy `OmniGuard - …` prefix to `Argus - …`. That means the
-  ~14 detections *and* the two utility searches (`Build Contract Baselines`,
+  13 detections *and* the three utility searches (`Build Contract Baselines`,
   `Candidate Scoring`) that earlier drafts wanted to withhold. Nothing in this
   file stays behind. They are the core of the project — eventstats z-score,
   streamstats, predict, cluster, plus the `contract_baselines`
@@ -42,20 +42,19 @@ These are excluded by `.gitignore` (verify with `git check-ignore <path>`):
 | `logs/` | Runtime data + findings feed |
 | `layerzero-src/`, `agent/audit_text/`, `models/` | Large vendored corpora — documented in README, regenerated locally |
 | `agent/submission_template.py`, `agent/foundry_gen.py` | Offensive automation — kept on the private branch |
-| `splunk/lookups/bad_addresses.csv` | Full curated list — ship a small public stub instead |
 | `agent/mcp_agent.py` | **DEPRECATED** MCP-over-SSE orchestrator — not the live loop (live agent is `splunk/bin/argus_agent.py`) |
 | `agent/splunk_mcp_client.py` | **KEEP — LIVE.** This is the SAIA client (`generate_spl`/`explain_spl` via `/predict`); `agent/saia_generate_detection.py` depends on it. Do **not** exclude. |
 | `splunk-mcp/`, `bug-hunter/` | Deprecated custom MCP server / personal scratch |
 | `demo/work/`, `demo/shots/`, `demo/voice/` | Render scratch dirs |
-| `demo/argus_demo.mp4`, `demo/argus_trailer.mp4`, `demo/mermaid.min.js` | Large render artifacts (host the video externally; link in README) |
+| `demo/argus_demo.mp4`, `demo/mermaid.min.js` | Large render artifacts (the short `demo/argus_trailer.mp4` IS shipped — see README "Demo"; host any longer videos externally) |
 
 ## Pre-publish steps
 
 1. **Rename detections** `OmniGuard - …` → `Argus - …` in
    `splunk/default/savedsearches.conf` (the app labels are already `Argus`).
-2. **Ship a stub** `splunk/lookups/bad_addresses.csv` with ~3 famous public
-   entries (e.g. known mixer / sanctioned addresses) so detections that depend
-   on it run out of the box; keep the full curated list on the private branch.
+2. **`splunk/lookups/bad_addresses.csv` ships** as a small *verified* public list
+   (Lazarus/Ronin OFAC, Tornado Cash pools, the TempleDAO attacker) so the Known-Bad
+   detection resolves out of the box; expand it on the private branch as needed.
 3. **Empty the kvstore** `contract_baselines` collection before bundling the app
    for distribution (it holds operator-accumulated baselines). The collection
    schema in `collections.conf` ships; the data does not.
@@ -76,8 +75,8 @@ These are excluded by `.gitignore` (verify with `git check-ignore <path>`):
 ```bash
 # After 'git add -A', list everything staged for the public repo and confirm
 # none of the private paths are present (.env.example is intentionally kept):
-git ls-files --cached | grep -E '^(\.env$|\.env\.[^/]+$|logs/|poc/findings/|layerzero-src/|models/|agent/(mcp_agent|foundry_gen|submission_template)\.py|demo/(work|shots|voice)/|demo/.*\.mp4|demo/mermaid\.min\.js)' \
-  | grep -v '^\.env\.example$'
+git ls-files --cached | grep -E '^(\.env$|\.env\.[^/]+$|logs/|layerzero-src/|models/|agent/(mcp_agent|foundry_gen|submission_template)\.py|demo/(work|shots|voice)/|demo/.*\.mp4|demo/mermaid\.min\.js)' \
+  | grep -vE '^(\.env\.example|demo/argus_trailer\.mp4)$'
 # ^ this must print NOTHING. If it prints a path, it is about to ship — stop.
 
 # architecture.png MUST NOT be ignored (required deliverable). Empty output = good:
