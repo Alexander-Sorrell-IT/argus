@@ -1,10 +1,11 @@
 # Detection AUTHORED BY the Splunk AI Assistant (SAIA) from a plain-English
 # threat description, via Argus. Review before scheduling.
-# Prompt: Write an SPL detection over index=omni_guard_security sourcetype=layerzero:transaction that flags any single transaction whose value_eth exceeds 5x the 99th percentile value for that contract_name. Output _time, tx_hash, contract_name, value_eth.
+# Prompt: Flag any layerzero:transaction whose gas_used is more than 3 standard deviations above the per-contract mean; output _time, tx_hash, contract_name, gas_used.
 
 ```splunk-spl
 index=omni_guard_security sourcetype="layerzero:transaction"
-| eval value_eth=tonumber(value_eth)
-| eventstats perc99(value_eth) as p99 by contract_name
-| where value_eth > 5 * p99
-| table _time tx_hash contract_name value_eth
+| eval gas_used_num=tonumber(gas_used)
+| eventstats avg(gas_used_num) as mean_gas stdev(gas_used_num) as stddev_gas by contract_name
+| eval threshold=mean_gas+3*stddev_gas
+| where gas_used_num>threshold
+| table _time tx_hash contract_name gas_used_num

@@ -17,7 +17,7 @@ deprecated/never-activated roadmap code. We do **not** hide working detections.
   ~14 detections *and* the two utility searches (`Build Contract Baselines`,
   `Candidate Scoring`) that earlier drafts wanted to withhold. Nothing in this
   file stays behind. They are the core of the project — eventstats z-score,
-  streamstats, predict, cluster, MLTK DBSCAN, plus the `contract_baselines`
+  streamstats, predict, cluster, plus the `contract_baselines`
   kvstore lookups. Hiding any of them would be self-sabotage for an open-source
   judging round.
 - The **live agent**: `splunk/bin/argus_agent.py` (Splunk modular input,

@@ -42,9 +42,10 @@ after $50M is gone. Argus closes that gap:
   contracts you care about.
 - **SPL anomaly detection** runs on a cron — z-score, cluster, outlier,
   forecast deviation — surfacing only what's unusual.
-- **Audit cross-reference** filters out issues that LayerZero's auditors
-  already flagged, using an indexed corpus of 1,288 audit chunks. You
-  only see *novel* signals.
+- **Audit cross-reference** (pipeline included — `ingest_audit_findings.py`)
+  can demote issues that LayerZero's auditors already flagged by indexing
+  audit reports as `layerzero:audit_finding`. The audit corpus itself is
+  *not bundled* in this repo — supply your own reports to populate it.
 - **In-app AI agent** — a Splunk modular input (`argus_agent.py`) runs in
   `splunkd` every 5 minutes, triages each novel candidate into a
   structured verdict, assigns a vulnerability class, and decides whether
@@ -67,8 +68,8 @@ deterministic Splunk-native scoring, not an external LLM.
 
 | Layer | Splunk primitive |
 |---|---|
-| Detection | `eventstats` (z-score), `streamstats`, `predict`, `cluster`, MLTK DBSCAN — 12 SPL detections |
-| Filtering | SPL JOIN against indexed audit corpus (`layerzero:audit_finding`) |
+| Detection | `eventstats` (z-score), `streamstats`, `predict`, `cluster` — 12 detections + 3 scoring/baseline jobs (15 saved searches, pure SPL; an optional MLTK-DBSCAN search ships disabled, needs the ML Toolkit) |
+| Filtering | SPL cross-reference against an audit corpus (`layerzero:audit_finding`) — ingestion pipeline included; corpus not bundled in this repo |
 | Source analysis | SPL pattern matching against indexed Solidity (`layerzero:source`) |
 | Enrichment | CSV lookup (`bad_addresses.csv`) |
 | State | Splunk kvstore (`contract_baselines`) — nightly rebuild |

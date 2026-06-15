@@ -23,7 +23,7 @@
   },
   "validation": {
     "validator": "poc/validate_finding.py",
-    "command": "set -a && source .env && set +a && python3 poc/validate_finding.py --tx-hash 0x8c3f442fc6d640a6ff3ea0b12be64f1d4609ea94edd2966f42c01cd9bdcf04b5 --chain ethereum --fork-block 15725066 --foundry-test poc/replays/templedao-access-control/Exploit.t.sol --no-splunk",
+    "command": "set -a && source .env && set +a && python3 poc/validate_finding.py --tx-hash 0x8c3f442fc6d640a6ff3ea0b12be64f1d4609ea94edd2966f42c01cd9bdcf04b5 --chain ethereum --fork-block 15725066 --foundry-test poc/findings/replay-templedao-access-control/Exploit.t.sol --no-splunk",
     "status": "CONFIRMED",
     "confidence": 0.7,
     "real_forge_pass": true,
@@ -37,13 +37,13 @@
     "archive_provider": "Alchemy (served pre-attack state at block 15725066 reliably)"
   },
   "source_files": {
-    "exploit": "Exploit.t.sol (copied from poc/replays/templedao-access-control/Exploit.t.sol)",
+    "exploit": "Exploit.t.sol (this directory)",
     "validator_result": "validator_result.json (fresh validate_finding.py output)",
-    "live_project_dir": "/Users/broodierchip-m1air/Desktop/omni-guard/poc/replays/templedao-access-control"
+    "live_project_dir": "poc/findings/replay-templedao-access-control"
   },
   "honesty_pairing": {
     "confirmed": "replay-templedao-access-control (this dir) — a REAL exploit, replayed, fork-reproduced to a genuine CONFIRMED.",
-    "rejected": "poc/findings/2026-05-27-puffer-001 — a REAL on-chain outlier (Puffer pufETH 58k ETH transfer) that the SAME validator correctly REJECTED because it does not reproduce as an exploit.",
-    "claim": "The validator confirms real exploits and rejects non-exploits — it cannot bluff."
+    "rejected": "The same validator returns an honest REJECTED when a test does not reproduce (e.g. a large but legitimate transfer where access control holds). A committed REJECTED finding artifact is not yet included in this repo.",
+    "claim": "The validator only writes CONFIRMED on a real Foundry [PASS] — it does not fabricate verdicts."
   }
 }

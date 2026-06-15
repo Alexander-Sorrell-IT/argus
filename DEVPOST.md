@@ -43,17 +43,19 @@ tagged in the index but off the verdict path). Just Splunk, used correctly.
 Argus is a five-stage funnel that runs end-to-end on Splunk:
 
 1. **Ingest** — On-chain transactions, events, contract source, audit reports, and the
-   Immunefi scope all become typed Splunk sourcetypes (~335k transactions and ~907k
-   events indexed for the LayerZero demo; 10 sourcetypes).
-2. **Detect** — 12 detection saved searches written in pure SPL find anomalies with
-   data-driven per-contract baselines (not magic numbers), tempered by conservative fixed
-   floors (e.g. `value_eth>0.1`, `zscore>3`, `fails_10m>5`) to suppress dust and noise:
-   per-contract z-score outliers (`eventstats`), `streamstats` baselines,
-   `predict`, `cluster`, and MLTK DBSCAN. Per-contract baselines live in the KV store
-   and rebuild nightly.
-3. **Cross-reference** — Detections are checked against an indexed audit corpus
-   (1,288 chunks) so already-documented, accepted-risk issues get demoted instead of
-   re-alerted.
+   Immunefi scope all become typed Splunk sourcetypes. This repo bundles a runnable
+   ~800-event LayerZero sample (`samples/`) so detections fire on a fresh clone; the
+   live ingester (`ingestion/`) scales to full history.
+2. **Detect** — 12 detection saved searches written in pure SPL (plus 3 scoring/baseline
+   jobs; 15 total) find anomalies with data-driven per-contract baselines (not magic
+   numbers), tempered by conservative fixed floors (e.g. `value_eth>0.1`, `zscore>3`,
+   `fails_10m>5`) to suppress dust and noise: per-contract z-score outliers (`eventstats`),
+   `streamstats` baselines, `predict`, and `cluster`. Per-contract baselines live in the KV
+   store and rebuild nightly. (An optional MLTK-DBSCAN search ships disabled — it needs the
+   ML Toolkit.)
+3. **Cross-reference** — A pipeline (`ingest_audit_findings.py`) can index audit reports as
+   `layerzero:audit_finding` so already-documented, accepted-risk issues get demoted instead
+   of re-alerted. The audit corpus is not bundled in this repo.
 4. **Triage (the in-app agent)** — A Splunk **modular input** on the Splunk Python SDK
    triages each surviving detection *in-process* and writes its verdict back as a Splunk
    event, deduplicated in the KV store. This triage is a fast, deterministic tier-0

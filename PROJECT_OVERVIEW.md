@@ -48,8 +48,8 @@ Every layer leans on Splunk's own primitives:
 
 | Layer | Splunk primitive used |
 |---|---|
-| Detection | SPL `eventstats` (z-score per contract), `streamstats`, `predict`, `cluster`, MLTK DBSCAN — 12 SPL detections |
-| Filtering | SPL JOIN against `layerzero:audit_finding` index (1,288 audit chunks) |
+| Detection | SPL `eventstats` (z-score per contract), `streamstats`, `predict`, `cluster` — 12 detections + 3 scoring/baseline jobs (15 saved searches; an optional MLTK clustering search ships disabled) |
+| Filtering | SPL cross-reference against `layerzero:audit_finding` (ingestion pipeline included; corpus not bundled in this repo) |
 | Source code analysis | `layerzero:source` indexed (197 Solidity files), SPL pattern matching |
 | Enrichment | `bad_addresses.csv` lookup (chainabuse + OFAC) |
 | State | Splunk kvstore (`contract_baselines` collection) — nightly rebuild via saved search |
@@ -68,15 +68,15 @@ Every layer leans on Splunk's own primitives:
    protocols/<name>.yaml      ─── contracts, chains, source path, audit path
    on-chain history           ─── tx + events + internal tx since deploy
    Solidity source            ─── parsed into indexable per-file events
-   audit corpus (→ 1,288 indexed chunks) ─── extracted, structured fields
+   audit corpus (pipeline included; corpus not bundled) ─── extracted, structured fields
    Immunefi rules             ─── scope contracts + impact tiers + bounty caps
                               │
                               ▼
-   DETECTION (12 SPL detections, cron 5m–6h)
+   DETECTION (12 active detections + 3 scoring/baseline jobs, cron 5m–6h)
    ─────────────────────────────────────────
    1. Value Outlier (z-score per contract, kvstore baseline)
    2. Sender Behavior Outlier
-   3. Replay / Duplicate Message ID
+   3. Replay / Duplicate Message ID  (removed — flagged ordinary LZ message delivery as FPs)
    4. Rare Transaction Pattern Cluster (SPL `cluster`)
    5. Cross-Contract Sender Correlation
    6. Failed Tx Burst vs Baseline (streamstats)
@@ -148,10 +148,10 @@ Every layer leans on Splunk's own primitives:
 
 | Sourcetype | Count | Purpose |
 |---|---|---|
-| `layerzero:transaction` | ~335k (growing) | On-chain transactions |
-| `layerzero:event` | ~907k | On-chain events / logs |
-| `layerzero:source` | 197 | Solidity source files |
-| `layerzero:audit_finding` | 1,288 | Audit corpus chunks |
+| `layerzero:transaction` | 418 (bundled sample; live ingester scales to full history) | On-chain transactions |
+| `layerzero:event` | 400 (bundled sample) | On-chain events / logs |
+| `layerzero:source` | Solidity source files (when ingested) | Solidity source files |
+| `layerzero:audit_finding` | 0 bundled — pipeline included, supply your own corpus | Audit corpus chunks |
 | `layerzero:scope` | growing | Immunefi scope + reward tiers |
 | `layerzero:alert` | growing | SPL detection hits (9 value-manipulation candidates surfaced) |
 | `layerzero:ai_report` | 21 | In-app agent triage verdicts (live, Splunk-native tier-0) |
@@ -192,7 +192,7 @@ Hackathon deadline is **Jun 15, 2026**. Dev license is valid for **6 months**, s
 - ✅ Pipeline plumbing complete end-to-end
 - ✅ All Splunk-native principles satisfied (verdict path makes zero AI calls; the production LLM is Splunk's own hosted SAIA, used to author detections — the local-MLX tier is experimental and off the verdict path)
 - ✅ In-app AI agent live as a `splunkd` modular input — 21 real `layerzero:ai_report` verdicts written
-- ✅ Audit corpus indexed and SPL-queryable (1,288 chunks)
+- 🔲 Audit corpus: ingestion pipeline included, but the corpus is not bundled in this repo (supply your own audit reports to populate `layerzero:audit_finding`)
 - ✅ Anvil fork validation working — proven this session with a real, honest REJECTED on a legitimate large transfer
 - ✅ Immunefi submission template generation
 - ✅ Splunk AI Assistant (SAIA) LIVE — authors new SPL detections from plain English and explains existing SPL (verified, ~15s; output in `splunk/generated/`)

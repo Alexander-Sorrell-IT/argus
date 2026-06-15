@@ -79,8 +79,8 @@
 > audit reports, Immunefi scope, and on-chain history — every artifact becomes a typed
 > Splunk sourcetype. From there every analysis layer runs on Splunk's own primitives:
 > statistical detection in SPL (`eventstats` z-scores, `streamstats` baselines, `predict`,
-> `cluster`, MLTK DBSCAN), per-contract baselines in the KV store, and an audit-corpus
-> cross-reference (1,288 indexed chunks) that demotes already-documented issues.
+> `cluster`), per-contract baselines in the KV store, and an audit-corpus cross-reference
+> pipeline that demotes already-documented issues (corpus supplied separately, not bundled).
 >
 > The agentic part runs INSIDE the Splunk app: a modular input on the Splunk Python SDK
 > triages each detection in-process and writes its verdict back as a Splunk event,
