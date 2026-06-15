@@ -1,0 +1,6 @@
+index=omni_guard_security sourcetype="layerzero:transaction"
+| eval gas_used_num=tonumber(gas_used)
+| eventstats avg(gas_used_num) as mean_gas stdev(gas_used_num) as stddev_gas by contract_name
+| eval threshold=mean_gas+3*stddev_gas
+| where gas_used_num>threshold
+| table _time tx_hash contract_name gas_used_num
