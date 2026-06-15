@@ -48,7 +48,11 @@ agent/mcp_agent.py
 # ── demo render artifacts (large; regenerated locally, never committed) ──
 # Keep architecture.png IN the repo — it is a required deliverable.
 demo/work/
-demo/shots/
+demo/shots/*
+# ...but the small REAL source assets the trailer rebuilds from ARE shipped:
+!demo/shots/dashboard_top.png
+!demo/shots/forkvalidate.txt
+!demo/shots/saia_spl.txt
 demo/voice/
 demo/argus_demo.mp4
 demo/mermaid.min.js

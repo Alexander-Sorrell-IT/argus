@@ -35,6 +35,8 @@ def main():
         pg.fill("input[name='password']", PASS)
         pg.click("input[type='submit'], button[type='submit']")
         pg.wait_for_load_state("networkidle", timeout=60000)
+        if "/account/login" in pg.url:
+            raise SystemExit("login FAILED — check SPLUNK_USER / SPLUNK_PASS (would otherwise screenshot the login page)")
         print("  logged in:", pg.url)
 
         # 2. open the dashboard and let the panels run their searches
@@ -49,16 +51,7 @@ def main():
 
         # 3. capture: full dashboard + the top (KPIs) viewport
         pg.screenshot(path=str(OUT / "dashboard_full.png"), full_page=True)
-        pg.screenshot(path=str(OUT / "dashboard_top.png"))  # current viewport (KPI row)
-        # scroll to the Investigation Log if present and grab a viewport
-        try:
-            el = pg.query_selector("text=Investigation Log")
-            if el:
-                el.scroll_into_view_if_needed(); time.sleep(2)
-                pg.screenshot(path=str(OUT / "dashboard_investigations.png"))
-        except Exception as e:
-            print("  (investigation-log shot skipped:", str(e)[:80], ")")
-
+        pg.screenshot(path=str(OUT / "dashboard_top.png"))  # the shipped trailer asset (KPI row + log)
         br.close()
     for f in OUT.glob("dashboard_*.png"):
         print(f"  wrote {f.relative_to(REPO)} ({f.stat().st_size} bytes)")

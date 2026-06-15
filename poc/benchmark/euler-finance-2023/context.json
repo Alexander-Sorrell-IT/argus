@@ -12,7 +12,7 @@
     "incident_date": "2023-03-13",
     "attack_tx_hash": "0xc310a0affe2169d1f6feec1c63dbc7f7c62a887fa48795d327d4d2da2d6b111d",
     "attack_block": "16817996",
-    "attacker_address": "0xb66cd966670d962C227B3EABA30a872DbFb995db",
+    "attacker_address": "0x5F259D0b76665c337c6104145894F4D1D2758B8c",
     "victim_contract": "0x27182842E098f60e3D576794A5bFFb0777E025d3",
     "loss_usd_approx": "~197000000",
     "defihacklabs_ref": "src/test/2023-03/Euler_exp.sol",
@@ -24,7 +24,8 @@
       "https://etherscan.io/tx/0xc310a0affe2169d1f6feec1c63dbc7f7c62a887fa48795d327d4d2da2d6b111d",
       "https://etherscan.io/address/0xb66cd966670d962c227b3eaba30a872dbfb995db",
       "https://github.com/SunWeb3Sec/DeFiHackLabs/blob/main/src/test/2023-03/Euler_exp.sol"
-    ]
+    ],
+    "note": "attacker_address is the SENDER of attack_tx_hash; attack_block is that tx's block (Etherscan-verifiable)."
   },
   "argus_mapping": {
     "argus_detection": "Multi-Step Attack Sequence",

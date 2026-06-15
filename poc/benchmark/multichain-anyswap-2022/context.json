@@ -26,7 +26,8 @@
       "https://etherscan.io/address/0x6b7a87899490ece95443e979ca9485cbe7e71522",
       "https://www.halborn.com/blog/post/explained-the-multichain-hack-january-2022",
       "https://twitter.com/PeckShieldAlert/status/1483363515411099651"
-    ]
+    ],
+    "note": "attacker_address is the SENDER of attack_tx_hash; attack_block is that tx's block (Etherscan-verifiable)."
   },
   "argus_mapping": {
     "argus_detection": "Value/Token Transfer Outlier",

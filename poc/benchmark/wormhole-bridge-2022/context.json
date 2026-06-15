@@ -25,7 +25,8 @@
       "https://certik.medium.com/wormhole-bridge-exploit-analysis-5068d79cbb71",
       "https://medium.com/ackee-blockchain/2022-solana-hacks-explained-wormhole-746f4fe8bb5a",
       "https://www.elliptic.co/blog/325-million-stolen-from-wormhole-defi-service"
-    ]
+    ],
+    "note": "attacker_address is the SENDER of attack_tx_hash; attack_block is that tx's block (Etherscan-verifiable)."
   },
   "argus_mapping": {
     "argus_detection": "Value/Token Transfer Outlier \u2014 Argus (EVM/Splunk-native) cannot observe the Solana-side signature forgery, but the Ethereum-side footprint is an anomalously large outflow (80,000 + 10,000 wETH \u2248 $146M+ in single txs) from the bridge contract to the attacker, which a z-score on value drained would flag. Note: the actual root-cause logic (verify_signatures/sysvar spoofing) is on Solana and is a gap for an EVM-only detector.",

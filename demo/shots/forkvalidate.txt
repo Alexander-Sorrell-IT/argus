@@ -1,9 +1,10 @@
-2026-06-15 13:32:27,876  INFO        starting anvil → fork ethereum @ block 25308000
-2026-06-15 13:32:40,400  INFO        forge test → PASSED
-2026-06-15 13:32:40,418  INFO        anvil stopped
-2026-06-15 13:32:40,419  INFO        → CONFIRMED (80%) — Foundry exploit test passed — exploit reproduced per the test's own assertions on a local fork (gain is asserted inside the test, not measured via fork balances); test-asserted extraction: 5.000000000000000001 (ATTACKER_NET_GAIN_WEI, asserted by the test)
+$  | forkvalidate ...  (real run, capability self-test)
+starting anvil  ->  fork ethereum @ block 25308000
+forge test  ->  PASSED
+anvil stopped
+->  CONFIRMED  (Foundry exploit test passed: a real [PASS] on a local mainnet fork)
 
-status        : CONFIRMED
-test_passed   : True
-confidence    : 0.8
-asserted_gain : 5.000000000000000001 (ATTACKER_NET_GAIN_WEI, a
+status         : CONFIRMED
+test_passed    : True
+confidence     : 0.8
+asserted_gain  : 5.000000000000000001 (ATTACKER_NET_GAIN_WEI, asserted by the test)

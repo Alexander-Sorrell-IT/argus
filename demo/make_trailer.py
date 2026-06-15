@@ -29,13 +29,18 @@ OUT = "/tmp/argus_frames"
 os.makedirs(OUT, exist_ok=True)
 frames = []
 
+# Fail loudly if the real captures are missing — never publish a degraded (slides-only) trailer unnoticed.
+_missing = [r for r in ("dashboard_top.png", "saia_spl.txt", "forkvalidate.txt") if not os.path.exists(os.path.join(SHOTS, r))]
+if _missing:
+    print(f"WARNING: missing real assets {_missing} — run demo/capture_ui.py first; the trailer will be degraded.")
+
 def center(d, y, text, f, fill):
     w = d.textlength(text, font=f); d.text(((W - w) // 2, y), text, font=f, fill=fill)
 
 def save(img, secs):
     p = os.path.join(OUT, f"f{len(frames):02d}.png"); img.save(p); frames.append((p, secs))
 
-def chrome(d, x0, y0, x1, y1, title, urlbar=False):
+def chrome(d, x0, y0, x1, y1, title):
     """Draw a window chrome (title bar + 3 dots) for a panel from x0,y0 to x1,y1."""
     d.rounded_rectangle([x0, y0, x1, y1], radius=16, fill=TERM_BG, outline=(40, 52, 74), width=2)
     d.rounded_rectangle([x0, y0, x1, y0 + 46], radius=16, fill=(22, 27, 34))
@@ -66,7 +71,7 @@ if shot:
     x = (W - im.width) // 2
     d.rectangle([x - 3, 110 - 3, x + im.width + 3, 110 + im.height + 3], outline=(40, 52, 74), width=3)
     img.paste(im, (x, 110))
-    center(d, 110 + im.height + 18, "$21.95B TVL  ·  live Investigation Log verdicts  ·  PoC Fork Test Queue  —  real data", REG(30), MUTED)
+    center(d, 110 + im.height + 18, "$21.95B TVL in scope  ·  live Investigation Log verdicts  ·  PoC Fork Test Queue  —  real data", REG(30), MUTED)
 else:
     center(d, 480, "(run demo/capture_ui.py to capture the live dashboard)", REG(34), MUTED)
 save(img, 6)

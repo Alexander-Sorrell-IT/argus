@@ -23,7 +23,8 @@
       "https://etherscan.io/tx/0x69272d8c84d67d1da2f6425b339192fa472898dce936f24818fda415c1c1ff3f",
       "https://etherscan.io/address/0xc9f27a50f82571c1c8423a42970613b8dbda14ef",
       "https://etherscan.io/token/0xf938424f7210f31df2aee3011291b658f872e91e"
-    ]
+    ],
+    "note": "attacker_address is the SENDER of attack_tx_hash; attack_block is that tx's block (Etherscan-verifiable)."
   },
   "argus_mapping": {
     "argus_detection": "Value/Token Transfer Outlier",

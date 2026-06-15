@@ -24,7 +24,8 @@
       "https://www.merklescience.com/blog/hack-track-analysis-of-qubit-finance-exploit",
       "https://medium.com/@QubitFin/protocol-exploit-report-2-30aade4d66de",
       "https://etherscan.io/tx/0x478d83f2ad909c64a9a3d807b3d8399bb67a997f9721fc5580ae2c51fab92acf"
-    ]
+    ],
+    "note": "attacker_address is the SENDER of attack_tx_hash; attack_block is that tx's block (Etherscan-verifiable)."
   },
   "argus_mapping": {
     "argus_detection": "Multi-Step Attack Sequence",

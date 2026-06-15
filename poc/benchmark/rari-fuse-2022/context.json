@@ -11,7 +11,7 @@
     "chain": "ethereum",
     "incident_date": "2022-04-30",
     "attack_tx_hash": "0xab486012f21be741c9e674ffda227e30518e8a1e37a5f1d58d0b0d41f6e76530",
-    "attack_block": "14684813",
+    "attack_block": "14684814",
     "attacker_address": "0x6162759edad730152f0df8115c698a42e666157f",
     "victim_contract": "0x3f2D1BC6D02522dbcdb216b2e75eDDdAFE04B16F",
     "loss_usd_approx": "~$80M (approx $79.75M)",
@@ -24,7 +24,8 @@
       "https://medium.com/@JackLongarzo/fuse-exploit-post-mortem-76ce18d8974",
       "https://etherscan.io/tx/0xab486012f21be741c9e674ffda227e30518e8a1e37a5f1d58d0b0d41f6e76530",
       "https://twitter.com/peckshield/status/1520369315698016256"
-    ]
+    ],
+    "note": "attacker_address is the SENDER of attack_tx_hash; attack_block is that tx's block (Etherscan-verifiable)."
   },
   "argus_mapping": {
     "argus_detection": "Multi-Step Attack Sequence",

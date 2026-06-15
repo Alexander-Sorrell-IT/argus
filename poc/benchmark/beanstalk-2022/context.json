@@ -11,7 +11,7 @@
     "chain": "ethereum",
     "incident_date": "2022-04-17",
     "attack_tx_hash": "0xcd314668aaa9bbfebaf1a0bd2b6553d01dd58899c508d4729fa7311dc5d33ad7",
-    "attack_block": "14596000",
+    "attack_block": "14602790",
     "attacker_address": "0x1c5dCdd006EA78a7E4783f9e6021C32935a10fb4",
     "victim_contract": "0xC1E088fC1323b20BCBee9bd1B9fC9546db5624C5",
     "loss_usd_approx": "approx 182M USD total protocol loss; approx 76M USD (24,830 WETH) net attacker profit",
@@ -24,7 +24,8 @@
       "https://www.halborn.com/blog/post/explained-the-beanstalk-hack-april-2022",
       "https://www.certik.com/resources/blog/revisiting-beanstalk-farms-exploit",
       "https://cointelegraph.com/news/beanstalk-farms-loses-182m-in-defi-governance-exploit"
-    ]
+    ],
+    "note": "attacker_address is the SENDER of attack_tx_hash; attack_block is that tx's block (Etherscan-verifiable)."
   },
   "argus_mapping": {
     "argus_detection": "Privileged Function Call",
