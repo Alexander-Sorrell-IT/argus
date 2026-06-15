@@ -123,6 +123,19 @@ agent. Several Splunk apps are installed alongside it:
 
 ## Quick start
 
+### Fastest path — one command (bundled sample, no API keys)
+
+```bash
+# Deploys the app, restarts Splunk, loads the ~800-event LayerZero sample, and
+# prints the dashboard URL. Set SPLUNK_HOME if Splunk isn't at ~/splunk.
+SPLUNK_USER=admin SPLUNK_PASS=<your-splunk-pass> ./scripts/quickstart.sh
+```
+
+Then open the dashboard and run searches over **All time** (the sample carries
+historical timestamps). To seed agent verdicts immediately instead of waiting for
+the 5-min cycle: `splunk cmd python3 $SPLUNK_HOME/etc/apps/omni_guard/bin/argus_agent.py --test`.
+The full manual install (live ingestion, Foundry, SAIA) is below.
+
 ### Prerequisites
 - Splunk Enterprise 10.x or higher with Developer License (10 GB/day)
 - Python 3.11+
