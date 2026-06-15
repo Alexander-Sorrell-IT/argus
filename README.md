@@ -79,6 +79,8 @@ deterministic Splunk-native scoring, not an external LLM.
 | AI detection authoring (live) | **Splunk AI Assistant (SAIA)**, Splunk's hosted LLM — **writes new SPL detections** from plain English + explains existing SPL via `/predict` (`agent/saia_generate_detection.py`; verified live, ~15s). Invoked on demand. (SAIA free-form finding-*judgment* via `agent/llm_enrich.py` is experimental — deflects/times out for this tenant, so it is **not** in the verdict path. Local-MLX Foundation-Sec stays roadmap.) |
 | Output | 10 typed sourcetypes (`:transaction`, `:event`, `:source`, `:audit_finding`, `:scope`, `:alert`, `:ai_report`, `:fork_result`, `:poc_trigger`, `:static_finding`), persistent in Splunk's index |
 
+![Argus — the detect→prove loop, all on Splunk](architecture_wide.png)
+
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full diagram and
 sequence flow.
 
@@ -162,7 +164,10 @@ SPLUNK_USER=admin SPLUNK_PASS=<your-splunk-pass> ./scripts/quickstart.sh
 Then open the dashboard and run searches over **All time** (the sample carries
 historical timestamps). To seed agent verdicts immediately instead of waiting for
 the 5-min cycle: `splunk cmd python3 $SPLUNK_HOME/etc/apps/omni_guard/bin/argus_agent.py --test`.
-The full manual install (live ingestion, Foundry, SAIA) is below.
+The full manual install (live ingestion, Foundry, SAIA) is below. To **verify every
+headline claim** against the running system, run [`scripts/reproduce.sh`](scripts/reproduce.sh)
+— it prints a PASS/FAIL table (data counts, detections, agent verdicts, SAIA, and a live
+`forkvalidate → CONFIRMED`). Every number in these docs is emitted by that script, not typed.
 
 ### Prerequisites
 - Splunk Enterprise 10.x or higher with Developer License (10 GB/day)
