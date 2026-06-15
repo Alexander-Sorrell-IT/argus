@@ -34,7 +34,7 @@ check "Splunk reachable + authenticated (HTTP 200)" "$code" '"$A" = "200"'
 
 check "Source data: layerzero:transaction events"  "$(q 'search index=omni_guard_security sourcetype=layerzero:transaction | stats count')" '"$A" -ge 300'
 check "Source data: layerzero:event events"        "$(q 'search index=omni_guard_security sourcetype=layerzero:event | stats count')"       '"$A" -ge 300'
-check "Detections: saved searches in the app"      "$(curl -sk -u "$U:$P" "$NS/saved/searches?count=0&output_mode=json" 2>/dev/null | python3 -c 'import sys,json;print(sum(1 for e in json.load(sys.stdin)["entry"] if e["name"].startswith("Argus -")))')" '"$A" -ge 16'
+check "Argus saved searches in the app"            "$(curl -sk -u "$U:$P" "$NS/saved/searches?count=0&output_mode=json" 2>/dev/null | python3 -c 'import sys,json;print(sum(1 for e in json.load(sys.stdin)["entry"] if e["name"].startswith("Argus -")))')" '"$A" -ge 18'
 check "Detections produced real alerts"            "$(q 'search index=omni_guard_security sourcetype=layerzero:alert | stats count')"       '"$A" -ge 1'
 check "Agent verdicts (layerzero:ai_report)"       "$(q 'search index=omni_guard_security sourcetype=layerzero:ai_report | stats count')"   '"$A" -ge 1'
 check "KV dedup state == distinct verdicts"        "$(curl -sk -u "$U:$P" "$NS/storage/collections/data/argus_agent_state" 2>/dev/null | python3 -c 'import sys,json;print(len(json.load(sys.stdin)))')" '"$A" -ge 1'

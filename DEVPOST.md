@@ -47,7 +47,7 @@ Argus is a five-stage funnel that runs end-to-end on Splunk:
    ~800-event LayerZero sample (`samples/`) so detections fire on a fresh clone; the
    live ingester (`ingestion/`) scales to full history.
 2. **Detect** — 13 detection saved searches written in pure SPL (plus 3 scoring/baseline
-   jobs; 16 total) find anomalies with data-driven per-contract baselines (not magic
+   jobs + 2 ES-ready outputs; 18 total) find anomalies with data-driven per-contract baselines (not magic
    numbers), tempered by conservative fixed floors (e.g. `value_eth>0.1`, `zscore>3`,
    `fails_10m>5`) to suppress dust and noise: per-contract z-score outliers (`eventstats`),
    `streamstats` baselines, `predict`, and `cluster` — plus a **mechanism-aware**
@@ -84,7 +84,7 @@ prove the layer is real.
   in-app agent, and the `| forkvalidate` command — with the `TA-triage-v1` add-on for
   ingest/triage. (Argus = the app; `omni_guard` = the engine it runs on.)
 - **Splunk Enterprise 10.4** with a Developer License as the entire runtime.
-- **Detection** entirely in SPL across 16 saved searches (13 detections + 3 scoring/baseline jobs) on cron schedules, writing
+- **Detection** entirely in SPL across 18 saved searches (13 detections + 3 scoring/baseline jobs + 2 ES-ready outputs) on cron schedules, writing
   results with `collect`; state in KV store collections (e.g. `contract_baselines`),
   rebuilt nightly.
 - **In-app agent** as a `splunklib.modularinput.Script` modular input deployed in the

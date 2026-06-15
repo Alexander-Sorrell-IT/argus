@@ -70,7 +70,7 @@ deterministic Splunk-native scoring, not an external LLM.
 
 | Layer | Splunk primitive |
 |---|---|
-| Detection | `eventstats` (z-score), `streamstats`, `predict`, `cluster`, + a mechanism-aware privileged-call rule (`lookup` of admin/ownership/upgrade/LZ-config selectors — catches the access-control class z-scores miss) — 13 detections + 3 scoring/baseline jobs (16 saved searches, pure SPL; an optional MLTK-DBSCAN search ships disabled, needs the ML Toolkit) |
+| Detection | `eventstats` (z-score), `streamstats`, `predict`, `cluster`, + a mechanism-aware privileged-call rule (`lookup` of admin/ownership/upgrade/LZ-config selectors — catches the access-control class z-scores miss) — 13 detections + 3 scoring/baseline jobs + 2 ES-ready outputs (RBA, adaptive response) = 18 saved searches (pure SPL; an optional MLTK-DBSCAN search ships disabled, needs the ML Toolkit) |
 | Filtering | SPL cross-reference against an audit corpus (`layerzero:audit_finding`) — ingestion pipeline included; corpus not bundled in this repo |
 | Source analysis | SPL pattern matching against indexed Solidity (`layerzero:source`) |
 | Enrichment | CSV lookup (`bad_addresses.csv`) |
