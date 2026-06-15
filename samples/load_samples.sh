@@ -33,7 +33,7 @@ set -euo pipefail
 
 # ── config (override via env) ────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SPLUNK_HOME="${SPLUNK_HOME:-/Applications/Splunk}"
+SPLUNK_HOME="${SPLUNK_HOME:-$HOME/splunk}"
 SPLUNK_BIN="${SPLUNK_BIN:-$SPLUNK_HOME/bin/splunk}"
 MGMT="${SPLUNK_MGMT:-https://localhost:8089}"
 INDEX="${SPLUNK_INDEX:-omni_guard_security}"

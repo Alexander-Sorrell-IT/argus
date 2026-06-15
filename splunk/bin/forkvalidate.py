@@ -12,7 +12,7 @@ fabricated numbers. Splunk's Python orchestrates the host EVM tooling (anvil/for
 via the system python3 (which carries the validator's deps); splunkd itself does not
 execute the EVM. Self-hosted Splunk Enterprise only (Splunk Cloud cannot spawn anvil).
 """
-import sys, os, json, time, subprocess
+import sys, os, json, time, subprocess, shutil
 
 APP_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(APP_HOME, "lib"))
@@ -33,7 +33,7 @@ class ForkValidateCommand(GeneratingCommand):
     # The validator carries deps (dotenv, web3 stack) that splunkd's bundled Python
     # lacks, so we drive it through the system interpreter — Splunk orchestrating the
     # host tool, which is exactly the integration boundary.
-    SYS_PYTHON = os.environ.get("ARGUS_SYS_PYTHON", "/usr/local/bin/python3")
+    SYS_PYTHON = os.environ.get("ARGUS_SYS_PYTHON") or shutil.which("python3") or sys.executable
 
     def _resolve_repo(self):
         """Locate the Argus checkout holding poc/validate_finding.py — portable,

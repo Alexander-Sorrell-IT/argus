@@ -1,9 +1,10 @@
 # Detection AUTHORED BY the Splunk AI Assistant (SAIA) from a plain-English
 # threat description, via Argus. Review before scheduling.
-# Prompt: Alert when a single from_address sends more than 20 failed transactions across any contracts within one hour
+# Prompt: Write an SPL detection over index=omni_guard_security sourcetype=layerzero:transaction that flags any single transaction whose value_eth exceeds 5x the 99th percentile value for that contract_name. Output _time, tx_hash, contract_name, value_eth.
 
-index=omni_guard_security sourcetype="layerzero:transaction" failed_tx=1
-| bin _time span=1h
-| stats count as failed_tx_count by from_address _time
-| where failed_tx_count > 20
-| fields from_address failed_tx_count _time
+```splunk-spl
+index=omni_guard_security sourcetype="layerzero:transaction"
+| eval value_eth=tonumber(value_eth)
+| eventstats perc99(value_eth) as p99 by contract_name
+| where value_eth > 5 * p99
+| table _time tx_hash contract_name value_eth
