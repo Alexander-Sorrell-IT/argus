@@ -79,3 +79,6 @@ demo/*.mp4
 # Build/scratch from this session
 .argus_*.js
 poc/replays/
+
+# agent-drafted exploit tests (ephemeral, regenerated per run)
+poc/findings/.auto/

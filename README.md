@@ -103,6 +103,20 @@ proves whether a candidate is a real exploit. Gaps are listed, not hidden.
 
 ---
 
+## Closed loop (optional, flag-gated)
+
+With `ARGUS_AUTO_VALIDATE=1`, the in-app agent closes the detect→prove loop on its own:
+for a poc-worthy candidate with no pre-written exploit test, it asks **SAIA to draft an
+`Exploit.t.sol`** (`poc/draft_exploit.py`), runs it via the fork-validator against a mainnet
+fork, and writes **CONFIRMED only on a real Foundry `[PASS]`** — otherwise an honest
+**INCONCLUSIVE**. SAIA proposes the hypothesis; the fork disposes the verdict — the LLM's
+output is checked by execution, never trusted. SAIA is an SPL assistant, not a Solidity
+writer, so most novel drafts won't compile and the loop correctly records INCONCLUSIVE
+rather than fabricating a result. Off by default, so the stock agent's verdict path stays
+deterministic (zero AI calls).
+
+---
+
 ## What's installed
 
 The hackathon entry's primary surface is the custom app and its in-app

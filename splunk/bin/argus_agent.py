@@ -57,6 +57,10 @@ SEVERITY_RANK = {"FALSE_POSITIVE": 0, "LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICA
 # fork-validate → verdict) with NO human running the validator. OFF by default so the
 # stock agent behaviour is unchanged; enable with ARGUS_AUTO_VALIDATE=1.
 AUTO_VALIDATE = os.getenv("ARGUS_AUTO_VALIDATE", "0") == "1"
+# When auto-validating, also let SAIA DRAFT an exploit test for candidates with no
+# pre-written one (the generation half of the loop). On by default once AUTO_VALIDATE is
+# on. SAIA only drafts the hypothesis — the verdict still comes from a real Foundry [PASS].
+SAIA_DRAFT = os.getenv("ARGUS_SAIA_DRAFT", "1") == "1"
 SYS_PYTHON = os.getenv("ARGUS_SYS_PYTHON", "/usr/local/bin/python3")
 
 def _argus_repo():
@@ -97,13 +101,50 @@ def _ensure_runnable(proj_dir, repo):
             pass
     libstd = os.path.join(proj_dir, "lib", "forge-std")
     if not os.path.exists(libstd):
-        src = os.path.join(repo, "layerzero-src", "LayerZero-v2", "lib", "forge-std")
-        if os.path.exists(src):
-            try:
-                os.makedirs(os.path.join(proj_dir, "lib"), exist_ok=True)
-                os.symlink(src, libstd)
-            except Exception:
-                pass
+        for src in (os.path.join(repo, "layerzero-src", "LayerZero-v2", "lib", "forge-std"),
+                    os.path.join(repo, "poc", "capability-selftest", "lib", "forge-std")):
+            if os.path.exists(src):
+                try:
+                    os.makedirs(os.path.join(proj_dir, "lib"), exist_ok=True)
+                    os.symlink(src, libstd)
+                except Exception:
+                    pass
+                break
+
+
+def _saia_draft_test(repo, trig, log):
+    """Generation half of the closed loop: for a candidate with NO pre-written test, ask
+    SAIA (via poc/draft_exploit.py, run under the system interpreter) to draft an
+    Exploit.t.sol. Returns the path if SAIA produced a usable Foundry test, else None
+    (→ honest INCONCLUSIVE). SAIA drafts the hypothesis; the verdict still comes from a
+    real Foundry [PASS] — never from SAIA."""
+    sig = str(trig.get("finding_signature") or trig.get("tx_hash") or "adhoc")[:16]
+    out_dir = os.path.join(repo, "poc", "findings", ".auto", sig)
+    cmd = [SYS_PYTHON, os.path.join(repo, "poc", "draft_exploit.py"),
+           "--tx-hash", str(trig.get("tx_hash", "")), "--chain", str(trig.get("chain", "ethereum")),
+           "--alert-type", str(trig.get("source_alert", "")),
+           "--vuln-class", str(trig.get("vulnerability_class", "")),
+           "--contract", str(trig.get("contract", "")),
+           "--description", str(trig.get("description", "")), "--out-dir", out_dir]
+    blk = trig.get("block_number")
+    if blk:
+        try:
+            cmd += ["--fork-block", str(int(blk) - 1)]
+        except Exception:
+            pass
+    log("  no pre-written test — asking SAIA to draft an exploit hypothesis…")
+    try:
+        import subprocess
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=300, cwd=repo)
+        lines = [ln for ln in (r.stdout or "").splitlines() if ln.strip()]
+        path = lines[-1].strip() if lines else ""
+        if path and os.path.exists(path):
+            log(f"  SAIA drafted a test → {os.path.relpath(path, repo)} (fork-validating it)")
+            return path
+        log("  SAIA produced no usable test → INCONCLUSIVE (no fabrication)")
+    except Exception as e:
+        log(f"  SAIA draft error: {e}")
+    return None
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────────
@@ -266,6 +307,8 @@ def auto_validate(service, trig, log=None, write=True):
         except Exception:
             pass
     test = _match_exploit_test(repo, tx)
+    if not test and SAIA_DRAFT:
+        test = _saia_draft_test(repo, trig, log)
     if test:
         _ensure_runnable(os.path.dirname(test), repo)
         cmd += ["--foundry-test", test]
@@ -337,6 +380,11 @@ def run_cycle(service, lookback="-6h", log=None, write=True):
                         "tx_hash": v["poc_tx_hash"],
                         "block_number": v["poc_block_number"],
                         "chain": alert.get("chain", "ethereum"),
+                        "finding_signature": sig,
+                        "vulnerability_class": v["vulnerability_class"],
+                        "source_alert": alert.get("alert_type", ""),
+                        "contract": alert.get("contract_name", ""),
+                        "description": (alert.get("description") or v.get("summary") or "")[:500],
                     }, log=log)
             # Record idempotent state so this finding is never re-processed.
             state.data.batch_save({
