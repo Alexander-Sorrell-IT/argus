@@ -68,9 +68,10 @@ class ForkResult:
     status: str                       # CONFIRMED | REJECTED | INCONCLUSIVE | ERROR
     confidence: float
     state_diff: dict = field(default_factory=dict)
-    attacker_gain_eth: float = 0.0
-    target_loss_eth: float = 0.0
+    attacker_gain_eth: Optional[float] = None   # independent fork-balance measurement; None = not measured this way
+    target_loss_eth: Optional[float] = None
     test_passed: Optional[bool] = None
+    test_asserted_gain: str = ""      # value the test itself emitted/asserted (NOT a fork-balance measurement)
     test_output: str = ""
     trace_summary: str = ""
     reason: str = ""
@@ -170,6 +171,21 @@ class ForkValidator:
         except Exception as e:
             return False, f"forge test error: {e}"
 
+    # ── Parse the gain the Foundry test itself emitted ──────────────────────────
+    @staticmethod
+    def _parse_emitted_gain(out: str) -> str:
+        """Pull a gain/profit figure the exploit test EMITTED, e.g. via
+        `emit log_named_decimal_uint("ATTACKER_NET_GAIN_WEI", g, 18)`, which forge
+        renders as 'ATTACKER_NET_GAIN_WEI: 5.000000000000000000'. This is the test's
+        OWN asserted value, not an independent fork-balance measurement — and it is
+        labelled as such so the verdict never overstates its evidence."""
+        m = re.search(
+            r'(?im)^\s*([A-Za-z0-9_ ]*(?:gain|profit|stolen|drained|extracted)[A-Za-z0-9_ ]*?)\s*:\s*([0-9][0-9,]*\.[0-9]+)',
+            out or "")
+        if not m:
+            return ""
+        return f"{m.group(2).replace(',', '')} ({m.group(1).strip()}, asserted by the test)"
+
     # ── Main ───────────────────────────────────────────────────────────────────
     def validate(
         self,
@@ -222,11 +238,23 @@ class ForkValidator:
             # do not fabricate a measured ETH figure — gain is None ("not measured here").
             attacker_gain = None
             target_loss = None
+            asserted_gain = self._parse_emitted_gain(test_out) if foundry_test else ""
+            have_trace = bool(trace_summary) and "error" not in trace_summary.lower()
 
-            # Decision — based solely on the Foundry test's own assertions.
+            # Decision — based solely on the Foundry test's own assertions. Confidence is
+            # EVIDENCE-DRIVEN, not a fixed constant: a clean PASS is the floor; a test that
+            # emitted a positive extracted-value figure and an independent re-trace raise it.
             if test_passed:
-                status, conf, reason = "CONFIRMED", 0.7, \
-                    "Foundry exploit test passed — exploit reproduced per the test's own assertions on a local fork (ETH gain is asserted inside the test, not measured via fork balances)"
+                conf = 0.6
+                if asserted_gain:  conf += 0.2     # the test demonstrated positive value extraction
+                if have_trace:     conf += 0.1     # independent cast re-trace of the real tx recorded
+                conf = round(min(conf, 0.9), 2)    # never claim certainty from a fork replay
+                gain_note = (f"; test-asserted extraction: {asserted_gain}" if asserted_gain
+                             else "; the test emitted no explicit value figure")
+                status, reason = "CONFIRMED", (
+                    "Foundry exploit test passed — exploit reproduced per the test's own "
+                    "assertions on a local fork (gain is asserted inside the test, not measured "
+                    "via fork balances)" + gain_note)
             elif test_passed is False:
                 status, conf, reason = "REJECTED", 0.8, "forge test failed — exploit hypothesis did not reproduce"
             else:
@@ -238,7 +266,7 @@ class ForkValidator:
                 state_diff={"pre": pre, "post": post},
                 attacker_gain_eth=attacker_gain,
                 target_loss_eth=target_loss,
-                test_passed=test_passed, test_output=test_out,
+                test_passed=test_passed, test_asserted_gain=asserted_gain, test_output=test_out,
                 trace_summary=trace_summary, reason=reason,
                 duration_secs=round(time.time() - t0, 2),
             )

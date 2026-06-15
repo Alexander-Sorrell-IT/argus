@@ -87,6 +87,7 @@ class ForkValidateCommand(GeneratingCommand):
             "status":        data.get("status"),
             "test_passed":   data.get("test_passed"),
             "confidence":    data.get("confidence"),
+            "test_asserted_gain": data.get("test_asserted_gain"),
             "tx_hash":       data.get("tx_hash", self.tx_hash),
             "chain":         data.get("chain", self.chain),
             "fork_block":    data.get("fork_block"),
