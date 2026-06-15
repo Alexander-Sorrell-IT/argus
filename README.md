@@ -82,6 +82,27 @@ sequence flow.
 
 ---
 
+## Detection coverage (attack class → detection → ground truth)
+
+Honest mapping of what fires on what. Statistical rules catch anomalous
+*amounts*; the mechanism-aware rule catches anomalous *actions*; fork-validation
+proves whether a candidate is a real exploit. Gaps are listed, not hidden.
+
+| Attack class | Detected by | Type | Fork-provable |
+|---|---|---|---|
+| Value drain / whale transfer | Value Transfer Outlier, Token Transfer Outlier | statistical (z-score) | ✅ |
+| Anomalous sender / multi-contract sweep | Sender Behavior Outlier, Cross-Contract Correlation, Multi-Step Sequence | statistical | ✅ |
+| Failed-tx burst (griefing / probing) | Failed Tx Burst vs Baseline | statistical | — |
+| Access control / config tamper | **Privileged Function Call** | mechanism (selector lookup) | ✅ (e.g. TempleDAO `migrateStake`) |
+| Proxy upgrade / ownership change | **Privileged Function Call** | mechanism | ✅ |
+| LayerZero config (`setPeer` / `setDelegate` / DVN) | **Privileged Function Call** | mechanism | ✅ |
+| Known-bad / sanctioned address | Known-Bad Address Touched | threat-intel lookup | — |
+| Reentrancy | — (no direct SPL signal) | — | ✅ (proven at fork-validation, not detected) |
+| Message / packet replay | _removed — false-positived on normal LZ delivery_ | — | — _(gap / backlog)_ |
+| Oracle / price manipulation | _not yet covered_ | — | — _(gap / backlog)_ |
+
+---
+
 ## What's installed
 
 The hackathon entry's primary surface is the custom app and its in-app
@@ -89,8 +110,9 @@ agent. Several Splunk apps are installed alongside it:
 
 - **Argus Security Monitor** (this app) — custom SPL detections,
   dashboard, lookups, and the live `argus_agent.py` modular input
-- **Splunk AI Toolkit (5.7.4)** + Python for Scientific Computing — MLTK
-  DBSCAN clustering used by the detections
+- **Splunk AI Toolkit (5.7.4)** + Python for Scientific Computing — provides
+  MLTK DBSCAN. The optional clustering detection ships **disabled** and needs
+  this toolkit installed to enable; every other detection is pure SPL
 - **Splunk Security Essentials (3.8.3)** — security pattern library
 - **Splunk MCP Server (1.1.3)** — official MCP interface (integrated for
   Splunk tool calls; the in-app agent uses the SDK directly)
