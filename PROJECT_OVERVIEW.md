@@ -48,7 +48,7 @@ Every layer leans on Splunk's own primitives:
 
 | Layer | Splunk primitive used |
 |---|---|
-| Detection | SPL `eventstats` (z-score per contract), `streamstats`, `predict`, `cluster` — 12 detections + 3 scoring/baseline jobs (15 saved searches; an optional MLTK clustering search ships disabled) |
+| Detection | SPL `eventstats` (z-score per contract), `streamstats`, `predict`, `cluster`, + a mechanism-aware privileged-call rule (`lookup` of admin selectors) — 13 detections + 3 scoring/baseline jobs (16 saved searches; an optional MLTK clustering search ships disabled) |
 | Filtering | SPL cross-reference against `layerzero:audit_finding` (ingestion pipeline included; corpus not bundled in this repo) |
 | Source code analysis | `layerzero:source` indexed (197 Solidity files), SPL pattern matching |
 | Enrichment | `bad_addresses.csv` lookup (chainabuse + OFAC) |

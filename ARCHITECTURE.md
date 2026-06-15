@@ -47,7 +47,7 @@ flowchart TB
   subgraph SPLUNK["Splunk Enterprise  —  the brain"]
     direction TB
     ST["Typed sourcetypes (index: omni_guard_security)<br/>layerzero:transaction · :event · :source<br/>:audit_finding · :scope"]
-    DET["SPL detections  (15 saved searches)<br/>eventstats z-score · streamstats · predict<br/>cluster · transaction"]
+    DET["SPL detections  (16 saved searches)<br/>eventstats z-score · streamstats · predict<br/>cluster · transaction · privileged-call lookup"]
     KVB[("kvstore<br/>contract_baselines")]
     ALERT["layerzero:alert<br/>(written via | collect)"]
 

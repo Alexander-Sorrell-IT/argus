@@ -1,0 +1,14 @@
+method_id,function,risk_class
+0xf2fde38b,transferOwnership,ownership
+0x715018a6,renounceOwnership,ownership
+0x13af4035,setOwner,ownership
+0x2f2ff15d,grantRole,access_control
+0xd547741f,revokeRole,access_control
+0x3659cfe6,upgradeTo,upgrade
+0x4f1ef286,upgradeToAndCall,upgrade
+0x3400288b,setPeer,lz_config
+0xca5eb5e1,setDelegate,lz_config
+0x8456cb59,pause,emergency
+0x3f4ba83a,unpause,emergency
+0xeb8d72b7,setTrustedRemote,lz_config
+0xbdcd9c80,migrateStake,privileged_migrate

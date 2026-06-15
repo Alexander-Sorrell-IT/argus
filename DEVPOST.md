@@ -46,13 +46,15 @@ Argus is a five-stage funnel that runs end-to-end on Splunk:
    Immunefi scope all become typed Splunk sourcetypes. This repo bundles a runnable
    ~800-event LayerZero sample (`samples/`) so detections fire on a fresh clone; the
    live ingester (`ingestion/`) scales to full history.
-2. **Detect** — 12 detection saved searches written in pure SPL (plus 3 scoring/baseline
-   jobs; 15 total) find anomalies with data-driven per-contract baselines (not magic
+2. **Detect** — 13 detection saved searches written in pure SPL (plus 3 scoring/baseline
+   jobs; 16 total) find anomalies with data-driven per-contract baselines (not magic
    numbers), tempered by conservative fixed floors (e.g. `value_eth>0.1`, `zscore>3`,
    `fails_10m>5`) to suppress dust and noise: per-contract z-score outliers (`eventstats`),
-   `streamstats` baselines, `predict`, and `cluster`. Per-contract baselines live in the KV
-   store and rebuild nightly. (An optional MLTK-DBSCAN search ships disabled — it needs the
-   ML Toolkit.)
+   `streamstats` baselines, `predict`, and `cluster` — plus a **mechanism-aware**
+   privileged-call rule that flags admin/ownership/upgrade/config selectors (the
+   access-control class that gas-normal, value-normal exploits hide in). Per-contract
+   baselines live in the KV store and rebuild nightly. (An optional MLTK-DBSCAN search
+   ships disabled — it needs the ML Toolkit.)
 3. **Cross-reference** — A pipeline (`ingest_audit_findings.py`) can index audit reports as
    `layerzero:audit_finding` so already-documented, accepted-risk issues get demoted instead
    of re-alerted. The audit corpus is not bundled in this repo.
@@ -82,7 +84,7 @@ prove the layer is real.
   in-app agent, and the `| forkvalidate` command — with the `TA-triage-v1` add-on for
   ingest/triage. (Argus = the app; `omni_guard` = the engine it runs on.)
 - **Splunk Enterprise 10.4** with a Developer License as the entire runtime.
-- **Detection** entirely in SPL across 15 saved searches (12 detections + 3 scoring/baseline jobs) on cron schedules, writing
+- **Detection** entirely in SPL across 16 saved searches (13 detections + 3 scoring/baseline jobs) on cron schedules, writing
   results with `collect`; state in KV store collections (e.g. `contract_baselines`),
   rebuilt nightly.
 - **In-app agent** as a `splunklib.modularinput.Script` modular input deployed in the
