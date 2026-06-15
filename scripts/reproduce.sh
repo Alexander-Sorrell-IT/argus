@@ -41,7 +41,7 @@ check "KV dedup state == distinct verdicts"        "$(curl -sk -u "$U:$P" "$NS/s
 check "Lookup: protocol_config rows"               "$(q '| inputlookup protocol_config.csv | stats count')"  '"$A" -ge 10'
 check "Lookup: bad_addresses (verified threat-intel)" "$(q '| inputlookup bad_addresses | stats count')"     '"$A" -ge 1'
 check "Lookup: privileged_selectors"               "$(q '| inputlookup privileged_selectors | stats count')" '"$A" -ge 13'
-check "SAIA cloud connection active (scs_token)"   "$(curl -sk -u "$U:$P" "https://localhost:8089/servicesNS/nobody/Splunk_AI_Assistant_Cloud/storage/collections/data/cloud_connected_configurations" 2>/dev/null | python3 -c 'import sys,json;d=json.load(sys.stdin);print("yes" if d and d[0].get("scs_token") else "no")')" '"$A" = "yes"'
+check "SAIA token provisioned (scs_token present)" "$(curl -sk -u "$U:$P" "https://localhost:8089/servicesNS/nobody/Splunk_AI_Assistant_Cloud/storage/collections/data/cloud_connected_configurations" 2>/dev/null | python3 -c 'import sys,json;d=json.load(sys.stdin);print("yes" if d and d[0].get("scs_token") else "no")')" '"$A" = "yes"'
 
 if [ "${1:-}" != "--no-fork" ]; then
   echo "  … running a real | forkvalidate (forks mainnet + Foundry, ~30s) …"

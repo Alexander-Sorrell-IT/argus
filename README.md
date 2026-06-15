@@ -75,7 +75,7 @@ deterministic Splunk-native scoring, not an external LLM.
 | Source analysis | SPL pattern matching against indexed Solidity (`layerzero:source`) |
 | Enrichment | CSV lookup (`bad_addresses.csv`) |
 | State | Splunk kvstore (`contract_baselines`) — nightly rebuild |
-| Data model | `Argus_Chain_Activity` — CIM-aligned, accelerated; detections can run via `tstats` |
+| Data model | `Argus_Chain_Activity` — a CIM-style data model (queryable via `\| datamodel` / `tstats`; acceleration is configurable in `datamodels.conf`) |
 | Risk scoring | Risk-Based Alerting: CIM risk events (`risk_object`/`risk_score`/`threat_object`) to the `risk` index — **Enterprise Security-ready** (install ES for notables on top) |
 | Adaptive response | `Argus - CONFIRMED Exploit - notify ops` fires on a CONFIRMED fork-result → Log Event / webhook (page the on-call team) |
 | AI agent (live) | `argus_agent.py` modular input running in `splunkd` (Python SDK), 5-min interval, deterministic tier-0 triage → `layerzero:ai_report` |

@@ -30,6 +30,8 @@ agent/foundry_gen.py
 layerzero-src/
 agent/audit_text/
 models/
+# ...but the app's OWN CIM data-model dir is a shipped artifact, not a vendored corpus:
+!splunk/default/data/models/
 
 # ── bug-hunter scratch ──────────────────────────────────────────────
 bug-hunter/

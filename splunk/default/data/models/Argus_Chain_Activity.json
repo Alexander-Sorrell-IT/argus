@@ -1,0 +1,363 @@
+{
+  "modelName": "Argus_Chain_Activity",
+  "displayName": "Argus Chain Activity",
+  "description": "CIM-aligned data model over Argus on-chain sourcetypes (transactions, events, alerts). Enables tstats-accelerated detections and ES ingestion.",
+  "objectSummary": {
+    "Event-Based": 3,
+    "Transaction-Based": 0,
+    "Search-Based": 0
+  },
+  "objects": [
+    {
+      "objectName": "Transactions",
+      "displayName": "Transactions",
+      "parentName": "BaseEvent",
+      "comment": "",
+      "fields": [
+        {
+          "fieldName": "_time",
+          "owner": "BaseEvent",
+          "type": "timestamp",
+          "fieldSearch": "",
+          "required": true,
+          "multivalue": false,
+          "hidden": false,
+          "editable": false,
+          "displayName": "_time",
+          "comment": ""
+        },
+        {
+          "fieldName": "contract_name",
+          "owner": "Transactions",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "contract_name",
+          "comment": ""
+        },
+        {
+          "fieldName": "contract_address",
+          "owner": "Transactions",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "contract_address",
+          "comment": ""
+        },
+        {
+          "fieldName": "from_address",
+          "owner": "Transactions",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "from_address",
+          "comment": ""
+        },
+        {
+          "fieldName": "to_address",
+          "owner": "Transactions",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "to_address",
+          "comment": ""
+        },
+        {
+          "fieldName": "value_eth",
+          "owner": "Transactions",
+          "type": "number",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "value_eth",
+          "comment": ""
+        },
+        {
+          "fieldName": "gas_used",
+          "owner": "Transactions",
+          "type": "number",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "gas_used",
+          "comment": ""
+        },
+        {
+          "fieldName": "is_error",
+          "owner": "Transactions",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "is_error",
+          "comment": ""
+        },
+        {
+          "fieldName": "chain",
+          "owner": "Transactions",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "chain",
+          "comment": ""
+        },
+        {
+          "fieldName": "method_id",
+          "owner": "Transactions",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "method_id",
+          "comment": ""
+        },
+        {
+          "fieldName": "tx_hash",
+          "owner": "Transactions",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "tx_hash",
+          "comment": ""
+        },
+        {
+          "fieldName": "block_number",
+          "owner": "Transactions",
+          "type": "number",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "block_number",
+          "comment": ""
+        }
+      ],
+      "calculations": [],
+      "constraints": [
+        {
+          "search": "index=omni_guard_security sourcetype=layerzero:transaction",
+          "owner": "Transactions",
+          "comment": ""
+        }
+      ],
+      "lineage": "Transactions"
+    },
+    {
+      "objectName": "Events",
+      "displayName": "Events",
+      "parentName": "BaseEvent",
+      "comment": "",
+      "fields": [
+        {
+          "fieldName": "_time",
+          "owner": "BaseEvent",
+          "type": "timestamp",
+          "fieldSearch": "",
+          "required": true,
+          "multivalue": false,
+          "hidden": false,
+          "editable": false,
+          "displayName": "_time",
+          "comment": ""
+        },
+        {
+          "fieldName": "contract_name",
+          "owner": "Events",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "contract_name",
+          "comment": ""
+        },
+        {
+          "fieldName": "contract_address",
+          "owner": "Events",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "contract_address",
+          "comment": ""
+        },
+        {
+          "fieldName": "topic0",
+          "owner": "Events",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "topic0",
+          "comment": ""
+        },
+        {
+          "fieldName": "chain",
+          "owner": "Events",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "chain",
+          "comment": ""
+        },
+        {
+          "fieldName": "tx_hash",
+          "owner": "Events",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "tx_hash",
+          "comment": ""
+        }
+      ],
+      "calculations": [],
+      "constraints": [
+        {
+          "search": "index=omni_guard_security sourcetype=layerzero:event",
+          "owner": "Events",
+          "comment": ""
+        }
+      ],
+      "lineage": "Events"
+    },
+    {
+      "objectName": "Alerts",
+      "displayName": "Alerts",
+      "parentName": "BaseEvent",
+      "comment": "",
+      "fields": [
+        {
+          "fieldName": "_time",
+          "owner": "BaseEvent",
+          "type": "timestamp",
+          "fieldSearch": "",
+          "required": true,
+          "multivalue": false,
+          "hidden": false,
+          "editable": false,
+          "displayName": "_time",
+          "comment": ""
+        },
+        {
+          "fieldName": "alert_type",
+          "owner": "Alerts",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "alert_type",
+          "comment": ""
+        },
+        {
+          "fieldName": "severity",
+          "owner": "Alerts",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "severity",
+          "comment": ""
+        },
+        {
+          "fieldName": "contract_name",
+          "owner": "Alerts",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "contract_name",
+          "comment": ""
+        },
+        {
+          "fieldName": "from_address",
+          "owner": "Alerts",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "from_address",
+          "comment": ""
+        },
+        {
+          "fieldName": "chain",
+          "owner": "Alerts",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "chain",
+          "comment": ""
+        },
+        {
+          "fieldName": "tx_hash",
+          "owner": "Alerts",
+          "type": "string",
+          "fieldSearch": "",
+          "required": false,
+          "multivalue": false,
+          "hidden": false,
+          "editable": true,
+          "displayName": "tx_hash",
+          "comment": ""
+        }
+      ],
+      "calculations": [],
+      "constraints": [
+        {
+          "search": "index=omni_guard_security sourcetype=layerzero:alert",
+          "owner": "Alerts",
+          "comment": ""
+        }
+      ],
+      "lineage": "Alerts"
+    }
+  ]
+}
