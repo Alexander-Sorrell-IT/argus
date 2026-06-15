@@ -82,7 +82,7 @@ prove the layer is real.
   in-app agent, and the `| forkvalidate` command — with the `TA-triage-v1` add-on for
   ingest/triage. (Argus = the app; `omni_guard` = the engine it runs on.)
 - **Splunk Enterprise 10.4** with a Developer License as the entire runtime.
-- **Detection** entirely in SPL across 12 saved searches on cron schedules, writing
+- **Detection** entirely in SPL across 15 saved searches (12 detections + 3 scoring/baseline jobs) on cron schedules, writing
   results with `collect`; state in KV store collections (e.g. `contract_baselines`),
   rebuilt nightly.
 - **In-app agent** as a `splunklib.modularinput.Script` modular input deployed in the
