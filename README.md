@@ -256,13 +256,11 @@ python poc/validate_finding.py \
 
 ## License
 
-[**AGPL-3.0**](LICENSE) — anyone running Argus as a service must publish
-their fork (and any modifications) under the same license. This is
-deliberate: keeps the platform open while preventing closed-source
-re-sale.
+[**PolyForm Noncommercial 1.0.0**](LICENSE) — free for noncommercial use:
+personal study, research, education, and nonprofit work. Any commercial
+use requires a separate paid license.
 
-A separate commercial license is available — contact the author below if
-you need to run Argus without AGPL obligations.
+Contact matrixbuilderops@proton.me for commercial licensing.
 
 ## Author
 
